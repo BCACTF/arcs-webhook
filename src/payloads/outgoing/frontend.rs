@@ -1,26 +1,19 @@
 use reqwest::StatusCode;
 use serde::Serialize;
-use uuid::Uuid;
 
-use crate::handlers::OutgoingErr;
-
-#[derive(Debug, Clone, Serialize)]
-pub enum SyncType {
-    Chall(Uuid),
-    User(Uuid),
-    Team(Uuid),
-    Solves,
-    All,
-}
+use crate::{handlers::OutgoingErr, payloads::incoming::frontend::SyncType};
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(tag = "__type", rename_all = "snake_case")]
 pub enum FromFrontend {
     Synced(SyncType),
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(tag = "__type", rename_all = "snake_case")]
 pub enum FromFrontendErr {
     FailedToSync(SyncType),
+    WebhookServerError(String),
 }
 
 impl OutgoingErr for FromFrontendErr {
@@ -53,6 +46,12 @@ impl OutgoingErr for FromFrontendErr {
                 Ok(json!({
                     "message": "failed to sync",
                     "sync_type": sync_type
+                }))
+            },
+            Self::WebhookServerError(reason) => {
+                Ok(json!({
+                    "message": "failed to forward the sync req",
+                    "reason": reason
                 }))
             }
         }

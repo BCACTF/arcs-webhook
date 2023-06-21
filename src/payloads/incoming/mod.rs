@@ -3,7 +3,7 @@ pub mod deploy;
 pub mod sql;
 pub mod frontend;
 
-use serde::{Serialize, Deserialize};
+use serde::Deserialize;
 
 pub use {
     discord::ToDiscord,
@@ -12,7 +12,7 @@ pub use {
     sql::ToSql,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Incoming {
     #[serde(rename = "deploy")]
     pub (crate) depl: Option<ToDeploy>,
