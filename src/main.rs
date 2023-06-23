@@ -11,12 +11,13 @@ use actix_web::{
     HttpServer, App, Responder,
     web::Json,
 };
+use webhook_rs::start_db_connection;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().unwrap();
-    
     set_up_logging(&DEFAULT_LOGGGING_TARGETS, "Webhook").unwrap();
+    start_db_connection().await;
 
     
     if let Err(e) = env::check_env_vars() {
