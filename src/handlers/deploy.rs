@@ -18,7 +18,7 @@ impl Handle for ToDeploy {
         trace!("Handling deploy req");
 
         let (req_type, polling_id, chall_name) = match self {
-            Self::Deploy { chall } => (
+            Self::Deploy { chall, force_wipe: _ } => (
                 "deploy",
                 uuid::Uuid::new_v4(),
                 match chall {

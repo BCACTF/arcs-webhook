@@ -88,7 +88,7 @@ mod sql {
         Error,
     };
 
-    use tokio::sync::{OnceCell, Mutex};
+    use tokio::sync::OnceCell;
 
     use crate::env::sql as cfg;
 
@@ -97,7 +97,7 @@ mod sql {
     pub struct CiText(String);
     impl CiText {
         pub fn string(self) -> String { self.0 }
-        pub fn citext(s: String) -> Self { Self(s) }
+        pub fn wrap(s: String) -> Self { Self(s) }
     }
 
     pub async fn connection() -> Result<PoolConnection<Postgres>, Error> {
@@ -122,12 +122,10 @@ mod sql {
                     .min_connections(4)
                     .max_connections(8);
 
-                let pool = options
+                options
                     .connect_with(connection_options)
                     .await
-                    .unwrap();
-
-                pool
+                    .unwrap()
             })
             .await;
 

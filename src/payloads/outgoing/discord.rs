@@ -7,8 +7,8 @@ use crate::handlers::OutgoingErr;
 #[serde(into = "&'static str")]
 pub struct FromDiscord;
 
-impl Into<&'static str> for FromDiscord {
-    fn into(self) -> &'static str { "success" }
+impl From<FromDiscord> for &'static str {
+    fn from(_: FromDiscord) -> Self { "success" }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

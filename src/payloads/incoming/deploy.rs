@@ -12,7 +12,10 @@ pub enum ChallIdentifier {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "__type", rename_all = "snake_case")]
 pub enum ToDeploy {
-    Deploy { chall: ChallIdentifier },
+    Deploy {
+        chall: ChallIdentifier,
+        force_wipe: bool,
+    },
     Poll { id: Uuid },
     Remove { chall: Uuid },
 }

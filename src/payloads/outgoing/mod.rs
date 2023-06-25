@@ -124,8 +124,8 @@ impl Outgoing {
                 .iter()
                 .fold((None, None), |(client, server), &code| {
                     (
-                        client.or((400 <= code && code < 500).then_some(code)),
-                        server.or((500 <= code && code < 600).then_some(code)),
+                        client.or((400..500).contains(&code).then_some(code)),
+                        server.or((500..600).contains(&code).then_some(code)),
                     )
                 });
 

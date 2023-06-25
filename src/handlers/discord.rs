@@ -130,8 +130,7 @@ impl Handle for ToDiscord {
                 let status_message = response
                     .headers()
                     .get("Reason-Phrase")
-                    .map(|v|  v.to_str().ok())
-                    .flatten()
+                    .and_then(|v|  v.to_str().ok())
                     .map(str::to_string)
                     .or_else(|| response.status().canonical_reason().map(str::to_string))
                     .unwrap_or_default();

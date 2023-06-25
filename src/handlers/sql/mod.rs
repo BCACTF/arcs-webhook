@@ -83,8 +83,6 @@ impl Handle for ToSql {
                     )
                 },
                 TeamQuery::UpdateTeam { id, name, description, eligible, affiliation, password } => {
-                    use crate::passwords::*;
-
                     if !check_team_auth(id, password).await? {
                         return Err(FromSqlErr::DatabaseError)
                     }
@@ -99,7 +97,6 @@ impl Handle for ToSql {
                         }).await?
                     )
                 },
-                _ => todo!(),
             },
         };
         Ok(return_payload)
