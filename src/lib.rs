@@ -1,6 +1,8 @@
 pub mod payloads;
 pub mod handlers;
 
+mod auth;
+
 #[allow(unused_macros)]
 pub mod logging {
     use arcs_logging_rs::with_target;
@@ -11,10 +13,6 @@ pub mod logging {
 pub mod env {
     use arcs_env_rs::*;
 
-    env_var_req!(FRONTEND_AUTH_TOKEN -> FRONTEND_TOKEN);
-    env_var_req!(WEBHOOK_AUTH_TOKEN -> WEBHOOK_TOKEN);
-    env_var_req!(DEPLOY_AUTH_TOKEN -> DEPLOY_TOKEN);
-    
     env_var_req!(PORT);
 
     env_var_req!(FRONTEND_ADDRESS);
@@ -23,7 +21,6 @@ pub mod env {
         
     assert_req_env!(check_env_vars:
         PORT,
-        FRONTEND_TOKEN, WEBHOOK_TOKEN, DEPLOY_TOKEN,
         FRONTEND_ADDRESS, WEBHOOK_ADDRESS, DEPLOY_ADDRESS
     );
 
@@ -60,7 +57,15 @@ pub mod env {
         );
     }
 
+    pub mod checks {
+        pub use super::check_env_vars as main;
+        pub use super::discord::check_env_vars as discord;
+        pub use super::sql::check_env_vars as sql;
+        pub use crate::auth::check_env_vars as auth;
+    }
 }
+
+
 
 mod http_client {
     use lazy_static::lazy_static;

@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use serde::Serialize;
 use uuid::Uuid;
 
-use crate::handlers::{OutgoingErr, sql::prepared::{challenges::Chall, teams::Team}};
+use crate::handlers::OutgoingErr;
 
 // TODO: Fix this
 #[derive(Debug, Clone, Serialize)]
@@ -15,12 +15,13 @@ pub enum FromSql {
     Team(Team),
     TeamArr(Vec<Team>),
     
-    // User(User),
-    // UserArr(),
+    User(User),
+    UserArr(Vec<User>),
     
     // Solves(),
 
     Availability(bool),
+    AuthStatus(bool),
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -29,6 +30,7 @@ pub enum FromSqlErr {
     DatabaseError,
     Auth,
     DoesNotExist(Uuid),
+    NameDoesNotExist(String),
 }
 
 impl From<sqlx::Error> for FromSqlErr {
@@ -51,17 +53,117 @@ impl OutgoingErr for FromSqlErr {
                 "err": "Unauthorized access.",
             })),
             Self::DoesNotExist(id) => Ok(serde_json::json!({
-                "err": "Team id does not exist.",
+                "err": "This id does not exist.",
                 "id": id,
+            })),
+            Self::NameDoesNotExist(name) => Ok(serde_json::json!({
+                "err": "This name does not exist.",
+                "name": name,
             })),
         }
     }
     fn status_code(&self) -> u16 {
         match self {
-            Self::OtherServerError(_) => 500,
-            Self::DatabaseError => 500,
+            Self::OtherServerError(_) | Self::DatabaseError => 500,
+            Self::DoesNotExist(_) | Self::NameDoesNotExist(_) => 404,
             Self::Auth => 403,
-            Self::DoesNotExist(_) => 404,
         }
     }
 }
+
+mod types {
+    use serde::{Serialize, Deserialize};
+    use uuid::Uuid;
+
+    use crate::sql::CiText;
+
+    #[derive(Debug, Clone, Serialize)]
+    pub struct SerializableTeam {
+        pub id: Uuid,
+        pub name: CiText,
+        pub last_solve: Option<u64>,
+        pub eligible: bool,
+        pub affiliation: Option<String>,
+    }
+    impl From<Team> for SerializableTeam {
+        fn from(Team { id, name, last_solve, eligible, affiliation }: Team) -> Self {
+            SerializableTeam {
+                id, name, eligible, affiliation,
+                last_solve: last_solve.map(|dt| dt.timestamp() as u64),
+            }
+        }
+    }
+
+    #[derive(Debug, Clone, Serialize)]
+    #[serde(into = "SerializableTeam")]
+    pub struct Team {
+        pub id: Uuid,
+        pub name: CiText,
+        pub last_solve: Option<chrono::NaiveDateTime>,
+        pub eligible: bool,
+        pub affiliation: Option<String>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct Chall {
+        pub id: Uuid,
+        pub name: CiText,
+        pub description: String,
+        pub points: i32,
+        pub authors: Option<Vec<String>>,
+        pub hints: Option<Vec<String>>,
+        pub categories: Option<Vec<String>>,
+        pub tags: Vec<String>,
+        pub solve_count: i32,
+        pub visible: bool,
+        pub source_folder: String,
+    }
+
+
+
+    #[derive(Debug, Clone, Serialize)]
+    pub struct SerializableUser {
+        pub id: Uuid,
+        pub email: CiText,
+        pub name: CiText,
+
+        pub team_id: Option<Uuid>,
+        pub score: i32,
+        pub last_solve: Option<u64>,
+        
+        pub eligible: bool,
+        pub admin: bool,
+    }
+    impl From<User> for SerializableUser {
+        fn from(User {
+            id, email, name,
+            team_id, score, last_solve,
+            eligible, admin,
+        }: User) -> Self {
+            SerializableUser {
+                id, email, name,
+                team_id, score,
+                eligible, admin,
+                last_solve: last_solve.map(|dt| dt.timestamp() as u64),
+            }
+        }
+    }
+
+    #[derive(Debug, Clone, Serialize)]
+    #[serde(into = "SerializableUser")]
+    pub struct User {
+        pub id: Uuid,
+        pub email: CiText,
+        pub name: CiText,
+
+        pub team_id: Option<Uuid>,
+
+        pub score: i32,
+        pub last_solve: Option<chrono::NaiveDateTime>,
+        
+        pub eligible: bool,
+        pub admin: bool,
+    }
+}
+pub use types::{ Team, Chall, User };
+

@@ -2,44 +2,6 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "__type", rename_all = "snake_case")]
-pub enum UserQuery {
-    
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "query_name", rename_all = "snake_case")]
-pub enum TeamQuery {
-    #[serde(rename = "available")]
-    CheckTeamnameAvailability {
-        name: String,
-    },
-    #[serde(rename = "create")]
-    CreateNewTeam {
-        name: String,
-        description: String,
-        eligible: bool,
-        affiliation: Option<String>,
-        password: String,
-    },
-    #[serde(rename = "create")]
-    UpdateTeam {
-        id: Uuid,
-        name: Option<String>,
-        description: Option<String>,
-        eligible: Option<bool>,
-        affiliation: Option<Option<String>>,
-        password: String,
-    },
-    #[serde(rename = "get")]
-    GetTeam {
-        id: Uuid,
-    },
-    #[serde(rename = "get_all")]
-    GetAllTeams
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum LinkType {
     Nc,
@@ -94,14 +56,4 @@ pub enum ChallQuery {
     },
     #[serde(rename = "get_all")]
     GetAllChallenges,
-}
-
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "__type", rename_all = "snake_case")]
-pub enum ToSql {
-    // User(UserQuery),
-    Team(TeamQuery),
-    Chall(ChallQuery),
-    // Solve(SolveQuery),
 }

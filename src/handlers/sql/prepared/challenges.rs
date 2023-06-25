@@ -1,8 +1,11 @@
-use serde::{Serialize, Deserialize};
 use sqlx::{ query, query_as };
 use uuid::Uuid;
 
-use crate::{sql::{self, CiText}, payloads::incoming::sql::Link};
+use crate::sql;
+use crate::payloads::{
+    incoming::sql::Link,
+    outgoing::sql::Chall,
+};
 
 pub async fn set_chall_updated(id: Uuid) -> Result<u64, sqlx::Error> {
     let mut sql_connection = sql::connection().await?;
@@ -18,21 +21,6 @@ pub async fn set_chall_updated(id: Uuid) -> Result<u64, sqlx::Error> {
         .execute(&mut sql_connection)
         .await
         .map(|res| res.rows_affected())
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Chall {
-    pub id: Uuid,
-    pub name: CiText,
-    pub description: String,
-    pub points: i32,
-    pub authors: Option<Vec<String>>,
-    pub hints: Option<Vec<String>>,
-    pub categories: Option<Vec<String>>,
-    pub tags: Vec<String>,
-    pub solve_count: i32,
-    pub visible: bool,
-    pub source_folder: String,
 }
 
 pub async fn get_chall(id: Uuid) -> Result<Chall, sqlx::Error> {
@@ -135,6 +123,7 @@ pub async fn update_chall(id: Uuid, input: ChallInput) -> Result<Chall, sqlx::Er
         .execute(&mut sql_connection)
         .await?;
     
+    set_chall_updated(id).await?;
     get_chall(id).await
 }
 
@@ -160,9 +149,9 @@ pub async fn create_chall(input: NewChallInput) -> Result<Chall, sqlx::Error> {
             INSERT INTO challenges (
                 name, description, points,
                 authors, hints, categories, tags,
-                visible
+                visible, source_folder
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
         "#,
         input.name: String,
         input.description,
@@ -172,8 +161,11 @@ pub async fn create_chall(input: NewChallInput) -> Result<Chall, sqlx::Error> {
         &input.categories,
         &input.tags,
         input.visible,
+        &input.source_folder
     );
     query.execute(&mut sql_connection).await?;
 
-    todo!()
+    let output = get_chall_by_source_folder(&input.source_folder).await?;
+    set_chall_updated(output.id).await?;
+    Ok(output)
 }

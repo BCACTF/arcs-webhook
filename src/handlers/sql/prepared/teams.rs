@@ -1,8 +1,7 @@
-use serde::Serialize;
-use sqlx::{ query, query_as, types::chrono };
+use sqlx::{ query, query_as };
 use uuid::Uuid;
 
-use crate::{sql::{self, CiText}, payloads::outgoing::sql::FromSqlErr};
+use crate::{sql, payloads::outgoing::sql::{FromSqlErr, Team}};
 
 pub async fn set_team_updated(id: Uuid) -> Result<u64, sqlx::Error> {
     let mut sql_connection = sql::connection().await?;
@@ -20,36 +19,7 @@ pub async fn set_team_updated(id: Uuid) -> Result<u64, sqlx::Error> {
         .map(|res| res.rows_affected())
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct SerializableTeam {
-    pub id: Uuid,
-    pub name: CiText,
-    pub last_solve: Option<u64>,
-    pub eligible: bool,
-    pub affiliation: Option<String>,
-}
-impl From<Team> for SerializableTeam {
-    fn from(Team { id, name, last_solve, eligible, affiliation }: Team) -> Self {
-        SerializableTeam {
-            id, name, eligible, affiliation,
-            last_solve: last_solve.map(|dt| dt.timestamp() as u64),
-        }
-    }
-}
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(into = "SerializableTeam")]
-pub struct Team {
-    pub id: Uuid,
-    pub name: CiText,
-    #[serde(
-        serialize_with = "ser_date_time",
-        deserialize_with = "deser_date_time",
-    )]
-    pub last_solve: Option<chrono::NaiveDateTime>,
-    pub eligible: bool,
-    pub affiliation: Option<String>,
-}
 
 pub async fn get_team(id: Uuid) -> Result<Option<Team>, sqlx::Error> {
     let mut sql_connection = sql::connection().await?;
@@ -126,8 +96,11 @@ pub async fn create_team(input: NewTeamInput) -> Result<Team, sqlx::Error> {
         .await?;
     
     let team = get_team_by_name(&input.name).await?;
+    let team = team.ok_or_else(|| sqlx::Error::RowNotFound)?;
+    
+    set_team_updated(team.id).await?;
 
-    team.ok_or_else(|| sqlx::Error::RowNotFound)
+    Ok(team)
 }
 
 #[derive(Debug, Clone)]
@@ -193,6 +166,7 @@ pub async fn update_team(input: TeamInput) -> Result<Team, sqlx::Error> {
         return Err(sqlx::Error::RowNotFound)
     }
 
+
     if let Some(updated_team) = get_team(input.id).await? {
         Ok(updated_team)
     } else {
@@ -207,7 +181,7 @@ pub enum CheckTeamAuthError {
     NotFound(Uuid),
 }
 
-struct PasswordRow { hash: Option<String> }
+struct PasswordRow { hash: String }
 impl From<sqlx::Error> for CheckTeamAuthError {
     fn from(value: sqlx::Error) -> Self {
         CheckTeamAuthError::Sql(value)
@@ -234,16 +208,9 @@ pub async fn check_team_auth(id: Uuid, password: String) -> Result<bool, CheckTe
     );
     let Some(row) = query.fetch_optional(&mut sql_connection).await? else {
         return Err(CheckTeamAuthError::NotFound(id));
-    };
-    let Some(hash) = row.hash else {
-        return Err(CheckTeamAuthError::Sql(
-            sqlx::Error::ColumnNotFound("hashed_password".to_string()) // FIXME: this shouldn't have to exist. See PasswordRow.
-        ))
-    };
-
-    
+    };    
     argon2::verify_encoded(
-        &hash,
+        &row.hash,
         password.as_bytes(),
     ).map_err(|_| CheckTeamAuthError::Hashing)
 }

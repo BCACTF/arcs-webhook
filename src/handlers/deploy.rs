@@ -18,7 +18,7 @@ impl Handle for ToDeploy {
         trace!("Handling deploy req");
 
         let (req_type, polling_id, chall_name) = match self {
-            Self::Deploy { chall, force_wipe: _ } => (
+            Self::Deploy { chall, force_wipe: _ } => ( // FIXME: If force_wipe isn't enabled, try to access the current ID.
                 "deploy",
                 uuid::Uuid::new_v4(),
                 match chall {
@@ -40,7 +40,7 @@ impl Handle for ToDeploy {
 
         let response = DEFAULT
             .post(crate::env::deploy_address())
-            .bearer_auth(crate::env::webhook_token())
+            .bearer_auth(String::from_utf8_lossy(&crate::auth::webhook_auth()))
             .json(&body)
             .send()
             .await;
