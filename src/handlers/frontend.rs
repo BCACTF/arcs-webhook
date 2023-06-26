@@ -17,12 +17,13 @@ impl Handle for ToFrontend {
     async fn handle(self) -> ResponseFrom<Self> {
         let payload = match self {
             Self::Sync(sync_type) => match sync_type {
-                SyncType::All => json!({
-                    "__type": "all",
-                }),
-                SyncType::Solves => json!({
-                    "__type": "solves",
-                }),
+                SyncType::All       => json!({ "__type": "all" }),
+                SyncType::Solves    => json!({ "__type": "solves" }),
+                
+                SyncType::AllChalls => json!({ "__type": "all_challs" }),
+                SyncType::AllTeams  => json!({ "__type": "all_teams" }),
+                SyncType::AllUsers  => json!({ "__type": "all_users" }),
+
                 SyncType::Chall(id) => json!({
                     "__type": "chall",
                     "id": id,

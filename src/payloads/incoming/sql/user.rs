@@ -4,6 +4,7 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "__type", rename_all = "snake_case")]
 pub enum Auth {
+    #[serde(alias = "oauth")]
     OAuth {
         sub: String,
         provider: String,
@@ -29,12 +30,12 @@ pub enum UserQuery {
         admin: bool,
         auth: Auth,
     },
-    #[serde(rename = "available")]
+    #[serde(rename = "check_auth")]
     CheckUserAuth {
         id: Uuid,
         auth: Auth,
     },
-    #[serde(rename = "create")]
+    #[serde(rename = "update_auth")]
     UpdateUserAuth {
         id: Uuid,
         old_auth: Auth,

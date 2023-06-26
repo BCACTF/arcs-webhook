@@ -32,8 +32,18 @@ pub async fn get_chall(id: Uuid) -> Result<Option<Chall>, sqlx::Error> {
                 id,
                 name as "name: _", description, points,
                 authors, hints, categories, tags,
-                solve_count, visible, source_folder
-            FROM challenges WHERE id = $1;
+                solve_count, visible, source_folder,
+                COALESCE(array_agg(nc) FILTER (WHERE nc != NULL), ARRAY[]::text[]) as "links_nc!",
+                COALESCE(array_agg(web) FILTER (WHERE web != NULL), ARRAY[]::text[]) as "links_web!",
+                COALESCE(array_agg(admin) FILTER (WHERE admin != NULL), ARRAY[]::text[]) as "links_admin!",
+                COALESCE(array_agg(static) FILTER (WHERE static != NULL), ARRAY[]::text[]) as "links_static!"
+            FROM challenges
+                LEFT JOIN LATERAL links_of_type(challenges.id, 'nc') nc ON true
+                LEFT JOIN LATERAL links_of_type(challenges.id, 'web') web ON true
+                LEFT JOIN LATERAL links_of_type(challenges.id, 'admin') admin ON true
+                LEFT JOIN LATERAL links_of_type(challenges.id, 'static') static ON true
+            WHERE challenges.id = $1
+            GROUP BY challenges.id;
         "#,
         id,
     );
@@ -49,8 +59,18 @@ pub async fn get_chall_by_source_folder(folder: &str) -> Result<Option<Chall>, s
                 id,
                 name as "name: _", description, points,
                 authors, hints, categories, tags,
-                solve_count, visible, source_folder
-            FROM challenges WHERE source_folder = $1;
+                solve_count, visible, source_folder,
+                COALESCE(array_agg(nc) FILTER (WHERE nc != NULL), ARRAY[]::text[]) as "links_nc!",
+                COALESCE(array_agg(web) FILTER (WHERE web != NULL), ARRAY[]::text[]) as "links_web!",
+                COALESCE(array_agg(admin) FILTER (WHERE admin != NULL), ARRAY[]::text[]) as "links_admin!",
+                COALESCE(array_agg(static) FILTER (WHERE static != NULL), ARRAY[]::text[]) as "links_static!"
+            FROM challenges
+                LEFT JOIN LATERAL links_of_type(challenges.id, 'nc') nc ON true
+                LEFT JOIN LATERAL links_of_type(challenges.id, 'web') web ON true
+                LEFT JOIN LATERAL links_of_type(challenges.id, 'admin') admin ON true
+                LEFT JOIN LATERAL links_of_type(challenges.id, 'static') static ON true
+            WHERE source_folder = $1
+            GROUP BY challenges.id;
         "#,
         folder,
     );
@@ -58,9 +78,7 @@ pub async fn get_chall_by_source_folder(folder: &str) -> Result<Option<Chall>, s
 }
 
 pub async fn get_all_challs() -> Result<Vec<Chall>, sqlx::Error> {
-    println!("tp1");
     let mut sql_connection = sql::connection().await?;
-    println!("tp2");
     let query = query_as!(
         Chall,
         r#"
@@ -68,11 +86,19 @@ pub async fn get_all_challs() -> Result<Vec<Chall>, sqlx::Error> {
                 id,
                 name as "name: _", description, points,
                 authors, hints, categories, tags,
-                solve_count, visible, source_folder
-            FROM challenges;
+                solve_count, visible, source_folder,
+                COALESCE(array_agg(nc) FILTER (WHERE nc != NULL), ARRAY[]::text[]) as "links_nc!",
+                COALESCE(array_agg(web) FILTER (WHERE web != NULL), ARRAY[]::text[]) as "links_web!",
+                COALESCE(array_agg(admin) FILTER (WHERE admin != NULL), ARRAY[]::text[]) as "links_admin!",
+                COALESCE(array_agg(static) FILTER (WHERE static != NULL), ARRAY[]::text[]) as "links_static!"
+            FROM challenges
+                LEFT JOIN LATERAL links_of_type(challenges.id, 'nc') nc ON true
+                LEFT JOIN LATERAL links_of_type(challenges.id, 'web') web ON true
+                LEFT JOIN LATERAL links_of_type(challenges.id, 'admin') admin ON true
+                LEFT JOIN LATERAL links_of_type(challenges.id, 'static') static ON true
+            GROUP BY challenges.id;
         "#,
     );
-    println!("tp3");
     query.fetch_all(&mut sql_connection).await
 }
 

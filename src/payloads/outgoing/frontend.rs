@@ -26,11 +26,14 @@ impl OutgoingErr for FromFrontendErr {
         match self {
             Self::FailedToSync(sync_type) => {
                 let (sync_type, id) = match sync_type {
-                    SyncType::User(id) => ("user", Some(id)),
-                    SyncType::Team(id) => ("team", Some(id)),
-                    SyncType::Chall(id) => ("chall", Some(id)),
-                    SyncType::Solves => ("solves", None),
-                    SyncType::All => ("all", None),
+                    SyncType::User(id)          => ("user", Some(id)),
+                    SyncType::Team(id)          => ("team", Some(id)),
+                    SyncType::Chall(id)         => ("chall", Some(id)),
+                    SyncType::AllUsers          => ("all_users", None),
+                    SyncType::AllTeams          => ("all_teams", None),
+                    SyncType::AllChalls         => ("all_challs", None),
+                    SyncType::Solves            => ("solves", None),
+                    SyncType::All               => ("all", None),
                 };
                 let sync_type = if let Some(id) = id {
                     json!({

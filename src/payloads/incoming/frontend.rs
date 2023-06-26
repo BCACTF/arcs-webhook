@@ -5,8 +5,11 @@ use uuid::Uuid;
 #[serde(tag = "__sync_type", rename_all = "snake_case")]
 pub enum SyncType {
     Chall(Uuid),
+    AllChalls,
     User(Uuid),
+    AllUsers,
     Team(Uuid),
+    AllTeams,
     Solves,
     All,
 }
