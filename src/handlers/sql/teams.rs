@@ -1,4 +1,5 @@
 use crate::payloads::*;
+use crate::logging::*;
 
 use incoming::sql::TeamQuery;
 use outgoing::sql::{FromSql, FromSqlErr};
@@ -12,18 +13,34 @@ use queries::{
 use queries::{ TeamInput, NewTeamInput };
 
 pub async fn handle(query: TeamQuery) -> Result<FromSql, FromSqlErr> {
+    trace!("Handling SQL team req");
+        
+    
     let success_res = match query {
-        TeamQuery::GetAllTeams => FromSql::TeamArr(get_all_teams().await?),
-        TeamQuery::GetTeam { id } => if let Some(team) = get_team(id).await? {
-            FromSql::Team(team)
-        } else {
-            return Err(FromSqlErr::DoesNotExist(id))
+        TeamQuery::GetAllTeams => {
+            debug!("SQL team req classified as 'GetAllTeams' req");
+            FromSql::TeamArr(get_all_teams().await?)
+        },
+        TeamQuery::GetTeam { id } => {
+            debug!("SQL team req classified as 'GetTeam<{id}>' req");
+            if let Some(team) = get_team(id).await? {
+                FromSql::Team(team)
+            } else {
+                return Err(FromSqlErr::DoesNotExist(id))
+            }
         },
         TeamQuery::CheckTeamnameAvailability { name } => {
+            let display_name = shortened(&name, 13);
+            debug!("SQL team req classified as 'CheckTeamnameAvailability<`{display_name}`>' req");
+
             let team = get_team_by_name(&name).await?;
             FromSql::Availability(team.is_none())
         },
         TeamQuery::CreateNewTeam { name, description, eligible, affiliation, password } => {
+            let display_name = shortened(&name, 13);
+            let display_affil = affiliation.as_ref().map(|affil| shortened(&affil, 13));
+            debug!("SQL team req classified as 'CreateNewTeam<`{display_name}` of {display_affil:?}>' req");
+
             use crate::passwords::*;
 
             let Ok(salt) = salt() else {
@@ -44,6 +61,8 @@ pub async fn handle(query: TeamQuery) -> Result<FromSql, FromSqlErr> {
             )
         },
         TeamQuery::UpdateTeam { id, name, description, eligible, affiliation, password } => {
+            debug!("SQL team req classified as 'UpdateTeam<{id}>' req");
+
             if !check_team_auth(id, password).await? {
                 return Err(FromSqlErr::DatabaseError)
             }

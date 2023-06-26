@@ -23,13 +23,13 @@ mod env {
             pub static ref FRONTEND_AUTH: Result<[u8; 32], &'static str> = (&frontend_token().as_bytes().to_owned()[..])
                 .try_into()
                 .map_err(|_| "FRONTEND_AUTH");
-            pub static ref WEBHOOK_AUTH:  Result<[u8; 32], &'static str>  = (&webhook_token().as_bytes().to_owned()[..])
+            pub static ref WEBHOOK_AUTH:  Result<[u8; 32], &'static str> = (&webhook_token() .as_bytes().to_owned()[..])
                 .try_into()
                 .map_err(|_| "WEBHOOK_AUTH");
-            pub static ref DEPLOY_AUTH:   Result<[u8; 32], &'static str>  = (&deploy_token() .as_bytes().to_owned()[..])
+            pub static ref DEPLOY_AUTH:   Result<[u8; 32], &'static str> = (&deploy_token()  .as_bytes().to_owned()[..])
                 .try_into()
                 .map_err(|_| "DEPLOY_AUTH");
-            pub static ref OAUTH_AUTH:    Result<[u8; 32], &'static str>  = (&oauth_token()  .as_bytes().to_owned()[..])
+            pub static ref OAUTH_AUTH:    Result<[u8; 32], &'static str> = (&oauth_token()   .as_bytes().to_owned()[..])
                 .try_into()
                 .map_err(|_| "OAUTH_AUTH");
         }

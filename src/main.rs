@@ -24,9 +24,8 @@ macro_rules! verify_env {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    dotenv::dotenv().unwrap();
+    dotenvy::dotenv().unwrap();
     set_up_logging(&DEFAULT_LOGGGING_TARGETS, "Webhook").unwrap();
-    start_db_connection().await;
 
     {
         use env::checks::*;
@@ -36,7 +35,11 @@ async fn main() -> std::io::Result<()> {
         verify_env!(auth: "auth");
     }
 
-    let ip = "127.0.0.1";
+
+    start_db_connection().await;
+
+
+    let ip = "0.0.0.0";
     let port = env::port().parse().unwrap();
 
     HttpServer::new(|| {
@@ -44,7 +47,6 @@ async fn main() -> std::io::Result<()> {
             .service(main_route)
     })
         .bind((ip, port))?
-        .on_connect( move |_, _| info!("connected on {ip}:{port}") )
         .run()
         .await
 }

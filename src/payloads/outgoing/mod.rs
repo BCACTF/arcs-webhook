@@ -68,17 +68,23 @@ impl Outgoing {
 
     fn update_codes_and_map(
         name: &'static str,
-        pair: (bool, Option<Details>),
+        (ok, data): (bool, Option<Details>),
         map: &mut HashMap<&'static str, serde_json::Value>,
         bad_code_list: &mut Vec<u16>,
-    ) -> Result<(), HttpResponse> {
-        if !pair.0 {
-            let Some(data) = pair.1 else {
+    ) -> Result<(), HttpResponse> {        
+        if !ok {
+
+            let Some(data) = data else {
+                error!("The combination of error and no details should never occur!");
+                info!("The error occurred in the {name} part of the response");
                 return Err(HttpResponse::InternalServerError().body("Major server issue encountered. See logs for more info."));
             };
+            
+            info!("The {name} part of this response is a failure (code {})", data.code);
+
             bad_code_list.push(data.code);
             map.insert(name, data.json);
-        } else if let Some(data) = pair.1 {
+        } else if let Some(data) = data {
             map.insert(name, data.json);
         }
         Ok(())
@@ -87,8 +93,6 @@ impl Outgoing {
     pub fn response(self) -> HttpResponse {
         let mut bad_status_code_list = vec![];
         let mut json_map = HashMap::new();
-        
-        debug!("Outgoing: {self:#?}");
         
 
         let depl = Self::update_codes_and_map(
@@ -116,10 +120,13 @@ impl Outgoing {
         }
 
         if bad_status_code_list.is_empty() {
+            info!("Response had no errors");
             HttpResponse
                 ::build(StatusCode::OK)
                 .json(json_map)
         } else {
+            info!("Response had errors in {:?}", json_map.keys());
+
             let (client, server) = bad_status_code_list
                 .iter()
                 .fold((None, None), |(client, server), &code| {
@@ -132,6 +139,8 @@ impl Outgoing {
             let code = StatusCode
                 ::from_u16(server.or(client).unwrap_or(500))
                 .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+
+            info!("Finalizing response with error code {code}");
 
             HttpResponse
                 ::build(code)
