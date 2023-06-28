@@ -1,6 +1,7 @@
 mod prepared;
 
 mod challs;
+mod solves;
 mod teams;
 mod users;
 
@@ -31,6 +32,10 @@ impl Handle for ToSql {
             ToSql::User(user_query) => {
                 debug!("SQL req classified as user req");
                 users::handle(user_query).await?
+            },
+            ToSql::Solve(solve_query) => {
+                debug!("SQL req classified as solve req");
+                solves::handle(solve_query).await?
             },
         };
         Ok(return_payload)

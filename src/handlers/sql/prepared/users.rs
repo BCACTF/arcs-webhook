@@ -309,3 +309,35 @@ pub async fn check_user_auth(id: Uuid, auth: CheckAuth) -> Result<bool, CheckUse
         },
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UserIsOnTeamOutcome { UserDoesNotExist, UserNotOnTeam, UserIsOnTeam }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct PredRow { value: bool }
+
+pub async fn user_is_on_team(id: Uuid, team_id: Uuid) -> Result<UserIsOnTeamOutcome, sqlx::Error> {
+    let mut sql_connection = sql::connection().await?;
+
+    let query = query_as!(
+        PredRow,
+        r#"
+            SELECT (team_id = $2) as "value!" FROM users WHERE id = $1;
+        "#,
+        id,
+        team_id,
+    );
+
+    let res = query.fetch_optional(&mut sql_connection).await?;
+
+    if let Some(row) = res {
+        if row.value {
+            Ok(UserIsOnTeamOutcome::UserIsOnTeam)
+        } else {
+            Ok(UserIsOnTeamOutcome::UserNotOnTeam)
+        }
+    } else {
+        Ok(UserIsOnTeamOutcome::UserDoesNotExist)
+    }
+}
+
