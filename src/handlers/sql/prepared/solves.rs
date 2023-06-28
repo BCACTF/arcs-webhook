@@ -1,8 +1,7 @@
-use sqlx::{ query_as, pool::PoolConnection, Postgres };
+use sqlx::query_as;
 use uuid::Uuid;
 
-type Ctx = PoolConnection<Postgres>;
-
+use super::Ctx;
 use crate::payloads::outgoing::sql::Solve;
 
 

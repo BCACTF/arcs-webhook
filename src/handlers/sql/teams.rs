@@ -12,18 +12,18 @@ use queries::{
 };
 use queries::{ TeamInput, NewTeamInput };
 
-pub async fn handle(query: TeamQuery) -> Result<FromSql, FromSqlErr> {
+pub async fn handle(mut ctx: super::Ctx, query: TeamQuery) -> Result<FromSql, FromSqlErr> {
     trace!("Handling SQL team req");
         
     
     let success_res = match query {
         TeamQuery::GetAllTeams => {
             debug!("SQL team req classified as 'GetAllTeams' req");
-            FromSql::TeamArr(get_all_teams().await?)
+            FromSql::TeamArr(get_all_teams(&mut ctx).await?)
         },
         TeamQuery::GetTeam { id } => {
             debug!("SQL team req classified as 'GetTeam<{id}>' req");
-            if let Some(team) = get_team(id).await? {
+            if let Some(team) = get_team(&mut ctx, id).await? {
                 FromSql::Team(team)
             } else {
                 return Err(FromSqlErr::DoesNotExist(id))
@@ -33,7 +33,7 @@ pub async fn handle(query: TeamQuery) -> Result<FromSql, FromSqlErr> {
             let display_name = shortened(&name, 13);
             debug!("SQL team req classified as 'CheckTeamnameAvailability<`{display_name}`>' req");
 
-            let team = get_team_by_name(&name).await?;
+            let team = get_team_by_name(&mut ctx, &name).await?;
             FromSql::Availability(team.is_none())
         },
         TeamQuery::CreateNewTeam { name, description, eligible, affiliation, password } => {
@@ -51,7 +51,7 @@ pub async fn handle(query: TeamQuery) -> Result<FromSql, FromSqlErr> {
             };
 
             FromSql::Team(
-                create_team(NewTeamInput {
+                create_team(&mut ctx, NewTeamInput {
                     name,
                     description,
                     eligible,
@@ -63,12 +63,12 @@ pub async fn handle(query: TeamQuery) -> Result<FromSql, FromSqlErr> {
         TeamQuery::UpdateTeam { id, name, description, eligible, affiliation, password } => {
             debug!("SQL team req classified as 'UpdateTeam<{id}>' req");
 
-            if !check_team_auth(id, password).await? {
+            if !check_team_auth(&mut ctx, id, password).await? {
                 return Err(FromSqlErr::DatabaseError)
             }
 
             FromSql::Team(
-                update_team(TeamInput {
+                update_team(&mut ctx, TeamInput {
                     id,
                     name,
                     description,

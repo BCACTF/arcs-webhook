@@ -1,12 +1,11 @@
 use sqlx::{ query, query_as };
 use uuid::Uuid;
 
+use super::Ctx;
 use crate::payloads::incoming::sql::Auth as CheckAuth;
-use crate::sql;
 use crate::payloads::outgoing::sql::{FromSqlErr, User};
 
-pub async fn set_user_updated(id: Uuid) -> Result<u64, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn set_user_updated(ctx: &mut Ctx, id: Uuid) -> Result<u64, sqlx::Error> {
     let query = query!(
         r#"
             UPDATE users
@@ -16,15 +15,14 @@ pub async fn set_user_updated(id: Uuid) -> Result<u64, sqlx::Error> {
         id,
     );
     query
-        .execute(&mut sql_connection)
+        .execute(ctx)
         .await
         .map(|res| res.rows_affected())
 }
 
 
 
-pub async fn get_user(id: Uuid) -> Result<Option<User>, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn get_user(ctx: &mut Ctx, id: Uuid) -> Result<Option<User>, sqlx::Error> {
     let query = query_as!(
         User,
         r#"
@@ -36,11 +34,10 @@ pub async fn get_user(id: Uuid) -> Result<Option<User>, sqlx::Error> {
         "#,
         id,
     );
-    query.fetch_optional(&mut sql_connection).await
+    query.fetch_optional(ctx).await
 }
 
-pub async fn get_user_by_name(name: &str) -> Result<Option<User>, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn get_user_by_name(ctx: &mut Ctx, name: &str) -> Result<Option<User>, sqlx::Error> {
     let query = query_as!(
         User,
         r#"
@@ -52,11 +49,10 @@ pub async fn get_user_by_name(name: &str) -> Result<Option<User>, sqlx::Error> {
         "#,
         name: String,
     );
-    query.fetch_optional(&mut sql_connection).await
+    query.fetch_optional(ctx).await
 }
 
-pub async fn get_all_users() -> Result<Vec<User>, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn get_all_users(ctx: &mut Ctx) -> Result<Vec<User>, sqlx::Error> {
     let query = query_as!(
         User,
         r#"
@@ -67,7 +63,7 @@ pub async fn get_all_users() -> Result<Vec<User>, sqlx::Error> {
             FROM users;
         "#,
     );
-    query.fetch_all(&mut sql_connection).await
+    query.fetch_all(ctx).await
 }
 
 
@@ -81,8 +77,7 @@ pub struct NewUserInput {
 }
 
 
-pub async fn create_user(input: NewUserInput) -> Result<User, FromSqlErr> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn create_user(ctx: &mut Ctx, input: NewUserInput) -> Result<User, FromSqlErr> {
 
 
     let query = query!(
@@ -96,14 +91,14 @@ pub async fn create_user(input: NewUserInput) -> Result<User, FromSqlErr> {
         input.admin,
     );
     query
-        .execute(&mut sql_connection)
+        .execute(&mut *ctx)
         .await?;
     
-    let user = get_user_by_name(&input.name).await?;
+    let user = get_user_by_name(&mut *ctx, &input.name).await?;
     let user = user.ok_or_else(|| sqlx::Error::RowNotFound)?;
     
-    set_auth(user.id, input.auth).await?;
-    set_user_updated(user.id).await?;
+    set_auth(&mut *ctx, user.id, input.auth).await?;
+    set_user_updated(ctx, user.id).await?;
 
     Ok(user)
 }
@@ -114,8 +109,7 @@ pub enum Auth {
     Pass { hash: String },
 }
 
-pub async fn set_auth(id: Uuid, auth: Auth) -> Result<(), FromSqlErr> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn set_auth(ctx: &mut Ctx, id: Uuid, auth: Auth) -> Result<(), FromSqlErr> {
 
     let rows = match auth {
         Auth::OAuth { sub, provider, oauth_allow_token } => {
@@ -132,7 +126,7 @@ pub async fn set_auth(id: Uuid, auth: Auth) -> Result<(), FromSqlErr> {
                 id,
                 sub,
                 provider,
-            ).execute(&mut sql_connection).await?.rows_affected()
+            ).execute(ctx).await?.rows_affected()
         },
         Auth::Pass { hash } => {
             query!(
@@ -142,7 +136,7 @@ pub async fn set_auth(id: Uuid, auth: Auth) -> Result<(), FromSqlErr> {
                 "#,
                 id,
                 hash,
-            ).execute(&mut sql_connection).await?.rows_affected()
+            ).execute(ctx).await?.rows_affected()
         },
     };
     
@@ -159,8 +153,7 @@ pub struct UserInput {
 }
 
 
-pub async fn update_user(input: UserInput) -> Result<User, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn update_user(ctx: &mut Ctx, input: UserInput) -> Result<User, sqlx::Error> {
 
     let query = query!(
         r#"
@@ -178,25 +171,24 @@ pub async fn update_user(input: UserInput) -> Result<User, sqlx::Error> {
     );
 
     let affected = query
-        .execute(&mut sql_connection)
+        .execute(&mut *ctx)
         .await?
         .rows_affected();
 
-    set_user_updated(input.id).await?;
+    set_user_updated(&mut *ctx, input.id).await?;
 
     if affected != 1 {
         return Err(sqlx::Error::RowNotFound)
     }
 
 
-    if let Some(updated_user) = get_user(input.id).await? {
+    if let Some(updated_user) = get_user(ctx, input.id).await? {
         Ok(updated_user)
     } else {
         Err(sqlx::Error::RowNotFound)
     }
 }
-pub async fn set_user_team(id: Uuid, team_id: Uuid) -> Result<User, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn set_user_team(ctx: &mut Ctx, id: Uuid, team_id: Uuid) -> Result<User, sqlx::Error> {
 
     let query = query!(
         r#"
@@ -209,17 +201,17 @@ pub async fn set_user_team(id: Uuid, team_id: Uuid) -> Result<User, sqlx::Error>
     );
 
     let affected = query
-        .execute(&mut sql_connection)
+        .execute(&mut *ctx)
         .await?
         .rows_affected();
 
-    set_user_updated(id).await?;
+    set_user_updated(&mut *ctx, id).await?;
 
     if affected != 1 {
         return Err(sqlx::Error::RowNotFound)
     }
 
-    if let Some(updated_user) = get_user(id).await? {
+    if let Some(updated_user) = get_user(ctx, id).await? {
         Ok(updated_user)
     } else {
         Err(sqlx::Error::RowNotFound)
@@ -253,8 +245,7 @@ impl From<CheckUserAuthError> for FromSqlErr {
     }
 }
 
-pub async fn check_user_auth(id: Uuid, auth: CheckAuth) -> Result<bool, CheckUserAuthError> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn check_user_auth(ctx: &mut Ctx, id: Uuid, auth: CheckAuth) -> Result<bool, CheckUserAuthError> {
 
 
     match auth {
@@ -278,7 +269,7 @@ pub async fn check_user_auth(id: Uuid, auth: CheckAuth) -> Result<bool, CheckUse
                 provider,
             );
 
-            let result = query.fetch_optional(&mut sql_connection).await?;
+            let result = query.fetch_optional(ctx).await?;
 
             if let Some(CountRow { count: Some(count) }) = result {
                 Ok(count > 0)
@@ -296,7 +287,7 @@ pub async fn check_user_auth(id: Uuid, auth: CheckAuth) -> Result<bool, CheckUse
             );
 
 
-            if let Some(PasswordRow { hash }) = query.fetch_optional(&mut sql_connection).await? {
+            if let Some(PasswordRow { hash }) = query.fetch_optional(ctx).await? {
                 Ok(
                     argon2::verify_encoded(
                         &hash,
@@ -316,8 +307,7 @@ pub enum UserIsOnTeamOutcome { UserDoesNotExist, UserNotOnTeam, UserIsOnTeam }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct PredRow { value: bool }
 
-pub async fn user_is_on_team(id: Uuid, team_id: Uuid) -> Result<UserIsOnTeamOutcome, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn user_is_on_team(ctx: &mut Ctx, id: Uuid, team_id: Uuid) -> Result<UserIsOnTeamOutcome, sqlx::Error> {
 
     let query = query_as!(
         PredRow,
@@ -328,7 +318,7 @@ pub async fn user_is_on_team(id: Uuid, team_id: Uuid) -> Result<UserIsOnTeamOutc
         team_id,
     );
 
-    let res = query.fetch_optional(&mut sql_connection).await?;
+    let res = query.fetch_optional(ctx).await?;
 
     if let Some(row) = res {
         if row.value {

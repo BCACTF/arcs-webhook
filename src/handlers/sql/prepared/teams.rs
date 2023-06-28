@@ -1,10 +1,11 @@
 use sqlx::{ query, query_as };
 use uuid::Uuid;
 
-use crate::{sql, payloads::outgoing::sql::{FromSqlErr, Team}};
+use super::Ctx;
+use crate::payloads::outgoing::sql::{FromSqlErr, Team};
 
-pub async fn set_team_updated(id: Uuid) -> Result<u64, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+
+pub async fn set_team_updated(ctx: &mut Ctx, id: Uuid) -> Result<u64, sqlx::Error> {
     let query = query!(
         r#"
             UPDATE teams
@@ -14,15 +15,15 @@ pub async fn set_team_updated(id: Uuid) -> Result<u64, sqlx::Error> {
         id,
     );
     query
-        .execute(&mut sql_connection)
+        .execute(ctx)
         .await
         .map(|res| res.rows_affected())
 }
 
 
 
-pub async fn get_team(id: Uuid) -> Result<Option<Team>, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn get_team(ctx: &mut Ctx, id: Uuid) -> Result<Option<Team>, sqlx::Error> {
+
     let query = query_as!(
         Team,
         r#"
@@ -33,11 +34,11 @@ pub async fn get_team(id: Uuid) -> Result<Option<Team>, sqlx::Error> {
         "#,
         id,
     );
-    query.fetch_optional(&mut sql_connection).await
+    query.fetch_optional(ctx).await
 }
 
-pub async fn get_team_by_name(name: &str) -> Result<Option<Team>, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn get_team_by_name(ctx: &mut Ctx, name: &str) -> Result<Option<Team>, sqlx::Error> {
+
     let query = query_as!(
         Team,
         r#"
@@ -48,11 +49,11 @@ pub async fn get_team_by_name(name: &str) -> Result<Option<Team>, sqlx::Error> {
         "#,
         name: String,
     );
-    query.fetch_optional(&mut sql_connection).await
+    query.fetch_optional(ctx).await
 }
 
-pub async fn get_all_teams() -> Result<Vec<Team>, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn get_all_teams(ctx: &mut Ctx) -> Result<Vec<Team>, sqlx::Error> {
+
     let query = query_as!(
         Team,
         r#"
@@ -62,7 +63,7 @@ pub async fn get_all_teams() -> Result<Vec<Team>, sqlx::Error> {
             FROM teams;
         "#,
     );
-    query.fetch_all(&mut sql_connection).await
+    query.fetch_all(ctx).await
 }
 
 
@@ -76,8 +77,8 @@ pub struct NewTeamInput {
 }
 
 
-pub async fn create_team(input: NewTeamInput) -> Result<Team, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn create_team(ctx: &mut Ctx, input: NewTeamInput) -> Result<Team, sqlx::Error> {
+
 
 
     let query = query!(
@@ -92,13 +93,13 @@ pub async fn create_team(input: NewTeamInput) -> Result<Team, sqlx::Error> {
         input.hashed_password,
     );
     query
-        .execute(&mut sql_connection)
+        .execute(&mut *ctx)
         .await?;
     
-    let team = get_team_by_name(&input.name).await?;
+    let team = get_team_by_name(&mut *ctx, &input.name).await?;
     let team = team.ok_or_else(|| sqlx::Error::RowNotFound)?;
     
-    set_team_updated(team.id).await?;
+    set_team_updated(ctx, team.id).await?;
 
     Ok(team)
 }
@@ -113,8 +114,8 @@ pub struct TeamInput {
 }
 
 
-pub async fn update_team(input: TeamInput) -> Result<Team, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn update_team(ctx: &mut Ctx, input: TeamInput) -> Result<Team, sqlx::Error> {
+
 
     let query = query!(
         r#"
@@ -144,13 +145,13 @@ pub async fn update_team(input: TeamInput) -> Result<Team, sqlx::Error> {
         );
 
         let affected = query
-            .execute(&mut sql_connection)
+            .execute(&mut *ctx)
             .await?
             .rows_affected();
 
         if affected > 0 {
             affiliation_query
-                .execute(&mut sql_connection)
+                .execute(&mut *ctx)
                 .await?
                 .rows_affected()
         } else {
@@ -158,7 +159,7 @@ pub async fn update_team(input: TeamInput) -> Result<Team, sqlx::Error> {
         }
     } else {
         query
-            .execute(&mut sql_connection)
+            .execute(&mut *ctx)
             .await?
             .rows_affected()
     };
@@ -167,7 +168,7 @@ pub async fn update_team(input: TeamInput) -> Result<Team, sqlx::Error> {
     }
 
 
-    if let Some(updated_team) = get_team(input.id).await? {
+    if let Some(updated_team) = get_team(ctx, input.id).await? {
         Ok(updated_team)
     } else {
         Err(sqlx::Error::RowNotFound)
@@ -197,8 +198,8 @@ impl From<CheckTeamAuthError> for FromSqlErr {
     }
 }
 
-pub async fn check_team_auth(id: Uuid, password: String) -> Result<bool, CheckTeamAuthError> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn check_team_auth(ctx: &mut Ctx, id: Uuid, password: String) -> Result<bool, CheckTeamAuthError> {
+
     let query = query_as!(
         PasswordRow,
         r#"
@@ -206,7 +207,7 @@ pub async fn check_team_auth(id: Uuid, password: String) -> Result<bool, CheckTe
         "#,
         id,
     );
-    let Some(row) = query.fetch_optional(&mut sql_connection).await? else {
+    let Some(row) = query.fetch_optional(ctx).await? else {
         return Err(CheckTeamAuthError::NotFound(id));
     };    
     argon2::verify_encoded(

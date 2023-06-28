@@ -1,14 +1,13 @@
 use sqlx::{ query, query_as };
 use uuid::Uuid;
 
-use crate::sql;
+use super::Ctx;
 use crate::payloads::{
     incoming::sql::Link,
     outgoing::sql::Chall,
 };
 
-pub async fn set_chall_updated(id: Uuid) -> Result<u64, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn set_chall_updated(ctx: &mut Ctx, id: Uuid) -> Result<u64, sqlx::Error> {
     let query = query!(
         r#"
             UPDATE challenges
@@ -18,13 +17,12 @@ pub async fn set_chall_updated(id: Uuid) -> Result<u64, sqlx::Error> {
         id,
     );
     query
-        .execute(&mut sql_connection)
+        .execute(ctx)
         .await
         .map(|res| res.rows_affected())
 }
 
-pub async fn get_chall(id: Uuid) -> Result<Option<Chall>, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn get_chall(ctx: &mut Ctx, id: Uuid) -> Result<Option<Chall>, sqlx::Error> {
     let query = query_as!(
         Chall,
         r#"
@@ -44,11 +42,10 @@ pub async fn get_chall(id: Uuid) -> Result<Option<Chall>, sqlx::Error> {
         "#,
         id,
     );
-    query.fetch_optional(&mut sql_connection).await
+    query.fetch_optional(ctx).await
 }
 
-pub async fn get_chall_by_source_folder(folder: &str) -> Result<Option<Chall>, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn get_chall_by_source_folder(ctx: &mut Ctx, folder: &str) -> Result<Option<Chall>, sqlx::Error> {
     let query = query_as!(
         Chall,
         r#"
@@ -68,11 +65,10 @@ pub async fn get_chall_by_source_folder(folder: &str) -> Result<Option<Chall>, s
         "#,
         folder,
     );
-    query.fetch_optional(&mut sql_connection).await
+    query.fetch_optional(ctx).await
 }
 
-pub async fn get_all_challs() -> Result<Vec<Chall>, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn get_all_challs(ctx: &mut Ctx) -> Result<Vec<Chall>, sqlx::Error> {
     let query = query_as!(
         Chall,
         r#"
@@ -90,7 +86,7 @@ pub async fn get_all_challs() -> Result<Vec<Chall>, sqlx::Error> {
             GROUP BY challenges.id;
         "#,
     );
-    query.fetch_all(&mut sql_connection).await
+    query.fetch_all(ctx).await
 }
 
 
@@ -108,8 +104,7 @@ pub struct ChallInput {
     pub source_folder: Option<String>,
 }
 
-pub async fn update_chall(id: Uuid, input: ChallInput) -> Result<Option<Chall>, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn update_chall(ctx: &mut Ctx, id: Uuid, input: ChallInput) -> Result<Option<Chall>, sqlx::Error> {
     let query = query!(
         r#"
             UPDATE challenges
@@ -137,16 +132,16 @@ pub async fn update_chall(id: Uuid, input: ChallInput) -> Result<Option<Chall>, 
         input.source_folder,
     );
     let affected = query
-        .execute(&mut sql_connection)
+        .execute(&mut *ctx)
         .await?
         .rows_affected();
 
     if affected != 1 { return Ok(None) }
 
     
-    set_chall_updated(id).await?;
+    set_chall_updated(&mut *ctx, id).await?;
 
-    let Some(output) = get_chall(id).await? else {
+    let Some(output) = get_chall(ctx, id).await? else {
         return Err(sqlx::Error::RowNotFound);
     };
     Ok(Some(output))
@@ -167,8 +162,7 @@ pub struct NewChallInput {
     pub source_folder: String,
 }
 
-pub async fn create_chall(input: NewChallInput) -> Result<Chall, sqlx::Error> {
-    let mut sql_connection = sql::connection().await?;
+pub async fn create_chall(ctx: &mut Ctx, input: NewChallInput) -> Result<Chall, sqlx::Error> {
     let query = query!(
         r#"
             INSERT INTO challenges (
@@ -188,12 +182,12 @@ pub async fn create_chall(input: NewChallInput) -> Result<Chall, sqlx::Error> {
         input.visible,
         &input.source_folder
     );
-    query.execute(&mut sql_connection).await?;
+    query.execute(&mut *ctx).await?;
 
-    let Some(output) = get_chall_by_source_folder(&input.source_folder).await? else {
+    let Some(output) = get_chall_by_source_folder(&mut *ctx, &input.source_folder).await? else {
         return Err(sqlx::Error::RowNotFound);
     };
 
-    set_chall_updated(output.id).await?;
+    set_chall_updated(ctx, output.id).await?;
     Ok(output)
 }

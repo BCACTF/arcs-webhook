@@ -11,18 +11,18 @@ use queries::{
 };
 use queries::{ ChallInput, NewChallInput };
 
-pub async fn handle(query: ChallQuery) -> Result<FromSql, FromSqlErr> {
+pub async fn handle(mut ctx: super::Ctx, query: ChallQuery) -> Result<FromSql, FromSqlErr> {
     trace!("Handling SQL chall req");
 
     let success_res = match query {
         ChallQuery::GetAllChallenges => {
             debug!("SQL chall req classified as 'GetAllChallenges' req");
-            FromSql::ChallArr(get_all_challs().await?)
+            FromSql::ChallArr(get_all_challs(&mut ctx).await?)
         },
         ChallQuery::GetChallenge { id } => {
             debug!("SQL chall req classified as 'GetChallenge<{id}>' req");
 
-            if let Some(chall) = get_chall(id).await? {
+            if let Some(chall) = get_chall(&mut ctx, id).await? {
                 FromSql::Chall(chall)
             } else {
                 return Err(FromSqlErr::DoesNotExist(id))
@@ -34,7 +34,7 @@ pub async fn handle(query: ChallQuery) -> Result<FromSql, FromSqlErr> {
             visible, source_folder,
         } => {
             debug!("SQL chall req classified as 'CreateChallenge<`{name}`>' req");
-            FromSql::Chall(create_chall(NewChallInput {
+            FromSql::Chall(create_chall(&mut ctx, NewChallInput {
                 name, description, points,
                 authors, hints, categories, tags, links,
                 visible, source_folder
@@ -48,7 +48,7 @@ pub async fn handle(query: ChallQuery) -> Result<FromSql, FromSqlErr> {
         } => {
             debug!("SQL chall req classified as 'UpdateChallenge<`{id}`>' req");
 
-            let opt_chall = update_chall(id, ChallInput {
+            let opt_chall = update_chall(&mut ctx, id, ChallInput {
                 name, description, points,
                 authors, hints, categories, tags, links,
                 visible, source_folder,

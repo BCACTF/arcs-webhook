@@ -14,32 +14,30 @@ use queries::{
 };
 use queries::{ SolveAttemptInput };
 
-pub async fn handle(query: SolveQuery) -> Result<FromSql, FromSqlErr> {
+pub async fn handle(mut ctx: super::Ctx, query: SolveQuery) -> Result<FromSql, FromSqlErr> {
     trace!("Handling SQL solve req");
-
-    let mut sql_connection = crate::sql::connection().await?;
 
     let success_res = match query {
         SolveQuery::GetAllSolves => {
             debug!("SQL solve req classified as 'GetAllSolves' req");
-            FromSql::SolveArr(get_all_solves(&mut sql_connection).await?)
+            FromSql::SolveArr(get_all_solves(&mut ctx).await?)
         },
         SolveQuery::GetAllSolvesByChall { chall_id } => {
             debug!("SQL solve req classified as 'GetAllSolvesByChall<{chall_id}>' req");
-            FromSql::SolveArr(get_solves_by_chall(&mut sql_connection, chall_id).await?)
+            FromSql::SolveArr(get_solves_by_chall(&mut ctx, chall_id).await?)
         },
         SolveQuery::GetAllSolvesByTeam { team_id } => {
             debug!("SQL solve req classified as 'GetAllSolvesByTeam<{team_id}>' req");
-            FromSql::SolveArr(get_solves_by_team(&mut sql_connection, team_id).await?)
+            FromSql::SolveArr(get_solves_by_team(&mut ctx, team_id).await?)
         },
         SolveQuery::GetAllSolvesByUser { user_id } => {
             debug!("SQL solve req classified as 'GetAllSolvesByUser<{user_id}>' req");
-            FromSql::SolveArr(get_solves_by_user(&mut sql_connection, user_id).await?)
+            FromSql::SolveArr(get_solves_by_user(&mut ctx, user_id).await?)
         },
         SolveQuery::GetSolve { id } => {
             debug!("SQL solve req classified as 'GetSolve<{id}>' req");
             
-            if let Some(solve) = get_solve(&mut sql_connection, id).await? {
+            if let Some(solve) = get_solve(&mut ctx, id).await? {
                 FromSql::Solve(solve)
             } else {
                 return Err(FromSqlErr::DoesNotExist(id))
@@ -54,19 +52,19 @@ pub async fn handle(query: SolveQuery) -> Result<FromSql, FromSqlErr> {
 
             use super::prepared::users::{ user_is_on_team, UserIsOnTeamOutcome::* };
 
-            match user_is_on_team(user_id, team_id).await? {
+            match user_is_on_team(&mut ctx, user_id, team_id).await? {
                 UserDoesNotExist => return Err(FromSqlErr::DoesNotExist(user_id)),
                 UserNotOnTeam => return Err(FromSqlErr::Auth),
                 UserIsOnTeam => (),
             }
 
-            if !check_user_auth(user_id, user_auth).await? {
+            if !check_user_auth(&mut ctx, user_id, user_auth).await? {
                 return Err(FromSqlErr::Auth)
             }
 
             FromSql::Solve(
                 attempt_solve(
-                    &mut sql_connection,
+                    &mut ctx,
                     SolveAttemptInput { user_id, team_id, chall_id, flag_guess },
                 ).await?
             )
