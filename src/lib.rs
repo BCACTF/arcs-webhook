@@ -3,6 +3,8 @@ pub mod handlers;
 
 mod auth;
 
+pub use auth::{ AuthHeader, check_matches, Token };
+
 #[allow(unused_macros)]
 pub mod logging {
     use arcs_logging_rs::with_target;

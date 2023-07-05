@@ -1,7 +1,6 @@
 use arcs_logging_rs::{DEFAULT_LOGGGING_TARGETS, set_up_logging};
 
-use webhook_rs::handlers::Handle;
-use webhook_rs::payloads::incoming::Incoming;
+use webhook_rs::handlers::Handle as _;
 
 use webhook_rs::env;
 
@@ -51,12 +50,28 @@ async fn main() -> std::io::Result<()> {
         .await
 }
 
+
+use actix_web::{ web::Header, HttpResponse };
+use serde_json::json;
+use webhook_rs::{
+    AuthHeader, Token,
+    payloads::incoming::Incoming,
+};
+
+
 #[actix_web::post("/")]
-async fn main_route(json: Json<Incoming>) -> impl Responder {
-    json
-        .into_inner()
-        .handle()
-        .await
-        .unwrap()
-        .response()
+async fn main_route(json: Json<Incoming>, authorization: Header<AuthHeader>) -> impl Responder {
+    if authorization.0.check_matches(&[ Token::Frontend, Token::Deploy ]) {
+        json
+            .into_inner()
+            .handle()
+            .await
+            .unwrap()
+            .response()
+    } else {
+        // TODO: More accurate error messages
+        HttpResponse::Unauthorized()
+            .json(json!({ "error": "Improper bearer authentication" }))
+    }
+
 }

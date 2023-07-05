@@ -64,16 +64,21 @@ pub use env::{ webhook_auth, check_env_vars };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Token {
-    Frontend = 1,
-    Deploy = 2,
-    Oauth = 4,
+    Frontend,
+    Deploy,
+    Oauth,
 }
 
+
 pub fn check_matches(list: &[Token], bytes: &[u8]) -> bool {
+    fn black_box_or(val_1: bool, val_2: bool) -> bool {
+        val_1 || val_2
+    }
+
     let Ok(buffer) = bytes.to_owned()[..].try_into() else { return false };
 
     let mut will_return_true = false;
-
+    
     for token in list {
         use self::env::*;
 
@@ -82,7 +87,54 @@ pub fn check_matches(list: &[Token], bytes: &[u8]) -> bool {
             Token::Deploy   => constant_time_eq::constant_time_eq_32(&buffer, &deploy_auth()),
             Token::Oauth    => constant_time_eq::constant_time_eq_32(&buffer, &oauth_auth()),
         };
-        will_return_true = will_return_true || bool_return;
+        will_return_true = std::hint::black_box(black_box_or(
+            std::hint::black_box(bool_return),
+            std::hint::black_box(will_return_true),
+        ));
     }
     will_return_true
+}
+
+// pub fn authenticate_request()
+
+
+#[derive(Debug, Clone)]
+pub struct AuthHeader {
+    data: Vec<u8>,
+}
+
+use actix_web::{
+    http::header::{
+        TryIntoHeaderValue, AUTHORIZATION,
+        Header
+    },
+    error::ParseError,
+};
+
+impl TryIntoHeaderValue for AuthHeader {
+    type Error = <Vec<u8> as TryIntoHeaderValue>::Error;
+
+    fn try_into_value(self) -> Result<reqwest::header::HeaderValue, Self::Error> {
+        self.data.try_into_value()
+    }
+}
+impl Header for AuthHeader {
+    fn name() -> reqwest::header::HeaderName { AUTHORIZATION }
+
+    fn parse<M: actix_web::HttpMessage>(msg: &M) -> Result<Self, actix_web::error::ParseError> {
+        let header = msg
+            .headers()
+            .get(Self::name())
+            .ok_or(ParseError::Header)?;
+
+        Ok(Self { data: header.as_bytes().to_vec() })
+    }
+}
+
+impl AuthHeader {
+    pub fn check_matches(&self, list: &[Token]) -> bool {
+        let Some(stripped) = self.data.strip_prefix(b"Bearer") else { return false; };
+
+        check_matches(list, stripped)
+    }
 }
