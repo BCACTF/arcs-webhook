@@ -1,7 +1,10 @@
-use serde::{Deserialize, Serialize};
+use {
+    serde::{Deserialize, Serialize},
+    schemars::JsonSchema,
+};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "__sync_type", rename_all = "snake_case")]
 pub enum SyncType {
     Chall(Uuid),
@@ -14,7 +17,7 @@ pub enum SyncType {
     All,
 }
 
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Copy, Deserialize, JsonSchema)]
 #[serde(tag = "__type", rename_all = "snake_case")]
 pub enum ToFrontend {
     Sync(SyncType),

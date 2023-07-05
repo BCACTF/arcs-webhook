@@ -1,15 +1,18 @@
-use serde::{Deserialize, Serialize};
+use {
+    serde::{Deserialize, Serialize},
+    schemars::JsonSchema,
+};
 use uuid::Uuid;
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(untagged)]
 pub enum ChallIdentifier {
     CurrDeployedId(Uuid), // NOTE: This is at the top for higher deserialization priority. DON'T MOVE IT PLEASE.
     Folder(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "__type", rename_all = "snake_case")]
 pub enum ToDeploy {
     Deploy {

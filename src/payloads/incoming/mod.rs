@@ -4,6 +4,7 @@ pub mod sql;
 pub mod frontend;
 
 use serde::Deserialize;
+use schemars::JsonSchema;
 
 pub use {
     discord::ToDiscord,
@@ -12,7 +13,7 @@ pub use {
     sql::ToSql,
 };
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct Incoming {
     #[serde(rename = "deploy")]
     pub (crate) depl: Option<ToDeploy>,

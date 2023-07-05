@@ -1,8 +1,10 @@
 use std::fmt::Display;
+use {
+    serde::{Deserialize, Serialize},
+    schemars::JsonSchema,
+};
 
-use serde::{Serialize, Deserialize};
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub enum AlertLevel {
     #[serde(rename = "INFO")]
     Info,
@@ -22,7 +24,7 @@ impl Display for AlertLevel {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct DeveloperDiscordMessage {
     pub (crate) level: AlertLevel,
     pub (crate) message: String,
@@ -30,14 +32,14 @@ pub struct DeveloperDiscordMessage {
     pub (crate) include_chall_writers: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "__participant_type", rename_all = "snake_case")]
 pub enum ParticipantMessage {
     FirstBlood { chall_name: String, team: String, user: String },
     Alert { message: String },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "__type", rename_all = "snake_case")]
 pub enum ToDiscord {
     Developer(DeveloperDiscordMessage),

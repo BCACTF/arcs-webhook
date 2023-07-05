@@ -1,7 +1,10 @@
-use serde::{Serialize, Deserialize};
+use {
+    serde::{Deserialize, Serialize},
+    schemars::JsonSchema,
+};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "query_name", rename_all = "snake_case")]
 pub enum SolveQuery {
     #[serde(rename = "get_all")]

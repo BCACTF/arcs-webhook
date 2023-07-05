@@ -1,7 +1,10 @@
-use serde::{Deserialize, Serialize};
+use {
+    serde::{Deserialize, Serialize},
+    schemars::JsonSchema,
+};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum LinkType {
     Nc,
@@ -10,14 +13,14 @@ pub enum LinkType {
     Static,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Link {
     #[serde(rename = "type")]
     link_type: LinkType,
     location: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "query_name", rename_all = "snake_case")]
 pub enum ChallQuery {
     #[serde(rename = "create")]

@@ -110,7 +110,10 @@ mod http_client {
     }
 }
 mod sql {
-    use serde::{Serialize, Deserialize};
+    use {
+        serde::{Deserialize, Serialize},
+        schemars::JsonSchema,
+    };
 
     use sqlx::{
         PgPool,
@@ -126,7 +129,7 @@ mod sql {
 
     use crate::env::sql as cfg;
 
-    #[derive(sqlx::Type, Debug, Clone, Serialize, Deserialize)]
+    #[derive(sqlx::Type, Debug, Clone, Serialize, Deserialize, JsonSchema)]
     #[sqlx(type_name = "citext")]
     pub struct CiText(String);
     impl CiText {
