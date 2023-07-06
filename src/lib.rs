@@ -1,9 +1,12 @@
 pub mod payloads;
 pub mod handlers;
 
+pub mod env;
 mod auth;
+mod sql;
 
 pub use auth::{ AuthHeader, check_matches, Token };
+pub use sql::start_db_connection;
 
 #[allow(unused_macros)]
 pub mod logging {
@@ -38,64 +41,6 @@ pub mod logging {
     }
 }
 
-
-pub mod env {
-    use arcs_env_rs::*;
-
-    env_var_req!(PORT);
-
-    env_var_req!(FRONTEND_ADDRESS);
-    env_var_req!(WEBHOOK_ADDRESS);
-    env_var_req!(DEPLOY_ADDRESS);
-        
-    assert_req_env!(check_env_vars:
-        PORT,
-        FRONTEND_ADDRESS, WEBHOOK_ADDRESS, DEPLOY_ADDRESS
-    );
-
-    pub mod discord {
-        use arcs_env_rs::*;
-
-        env_var_req!(DISCORD_ADMIN_WEBHOOK_URL -> ADMIN_URL);
-        env_var_req!(DISCORD_CHALL_WRITER_WEBHOOK_URL -> CHALL_WRITER_URL);
-        env_var_req!(DISCORD_PARTICIPANT_URL -> PARTICIPANT_URL);
-
-        env_var_req!(DISCORD_ADMIN_ROLE_ID -> ADMIN_ROLE);
-        env_var_req!(DISCORD_CHALL_WRITER_ROLE_ID -> CHALL_WRITER_ROLE);
-        env_var_req!(DISCORD_PARTICIPANT_ROLE_ID -> PARTICIPANT_ROLE);
-
-        assert_req_env!(
-            check_env_vars:
-                ADMIN_URL,  CHALL_WRITER_URL,  PARTICIPANT_URL,
-                ADMIN_ROLE, CHALL_WRITER_ROLE, PARTICIPANT_ROLE
-        );
-    }
-
-    pub mod sql {
-        use arcs_env_rs::*;
-
-        env_var_req!(SQL_DB_NAME -> DB_NAME);
-        // env_var_req!(SQL_DB_PASS -> DB_PASS);
-
-        env_var_req!(SQL_USERNAME -> USERNAME);
-
-        assert_req_env!(
-            check_env_vars:
-                DB_NAME, // DB_PASS,
-                USERNAME
-        );
-    }
-
-    pub mod checks {
-        pub use super::check_env_vars as main;
-        pub use super::discord::check_env_vars as discord;
-        pub use super::sql::check_env_vars as sql;
-        pub use crate::auth::check_env_vars as auth;
-    }
-}
-
-
-
 mod http_client {
     use lazy_static::lazy_static;
     use reqwest::Client;
@@ -109,73 +54,6 @@ mod http_client {
         };
     }
 }
-mod sql {
-    use {
-        serde::{Deserialize, Serialize},
-        schemars::JsonSchema,
-    };
-
-    use sqlx::{
-        PgPool,
-        pool::PoolConnection,
-        Postgres,
-    };
-    use sqlx::{
-        postgres::{PgConnectOptions, PgPoolOptions},
-        Error,
-    };
-
-    use tokio::sync::OnceCell;
-
-    use crate::env::sql as cfg;
-
-    #[derive(sqlx::Type, Debug, Clone, Serialize, Deserialize, JsonSchema)]
-    #[sqlx(type_name = "citext")]
-    pub struct CiText(String);
-    impl CiText {
-        pub fn string(self) -> String { self.0 }
-        pub fn wrap(s: String) -> Self { Self(s) }
-    }
-
-    pub async fn connection() -> Result<PoolConnection<Postgres>, Error> {
-        static CONNECTION: OnceCell<PgPool> = OnceCell::const_new();
-
-        let mutex = CONNECTION
-            .get_or_init(|| async {
-
-                let connection_options = PgConnectOptions::new()
-                    .application_name("ARCS-webhook")
-                    .database(cfg::db_name())
-                    .username(cfg::username());
-
-                let connection_options: PgConnectOptions = if let Ok(password) = std::env::var("SQL_DB_PASS") {
-                    connection_options.password(&password)
-                } else {
-                    connection_options
-                };
-    
-
-                let options = PgPoolOptions::new()
-                    .min_connections(4)
-                    .max_connections(8);
-
-                options
-                    .connect_with(connection_options)
-                    .await
-                    .unwrap()
-            })
-            .await;
-
-        mutex
-            .acquire()
-            .await
-    }
-
-    pub async fn start_db_connection() {
-        drop(connection().await);
-    }
-}
-pub use sql::start_db_connection;
 
 mod passwords {
     use argon2::{ Config, ThreadMode, Variant, Version };
