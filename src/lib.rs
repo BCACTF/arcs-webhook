@@ -2,6 +2,65 @@
     clippy::unwrap_used,
     clippy::expect_used,
 )]
+#![warn(missing_docs)]
+
+//! # ARCS Webhook
+//! 
+//! ### What is ARCS?
+//! 
+//! ARCS is a CTF framework designed by BCA's CTF Club— a group affiliated with
+//! Bergen County Academies that runs an annual Capture the Flag cybersecurity
+//! competition called `BCACTF`.
+//! 
+//! `BCACTF 4.0` – which took place in 2023 – is the first time an initial
+//! prototype of the ARCS framework was used.
+//! 
+//! ARCS is based on a medium-sized-service architecture (mesoservices), and
+//! there are 3 main custom servers built by the ARCS team.
+//! 
+//! The three servers are `frontend`, `deploy`, and `webhook`, with `webhook`
+//! being the focus of this crate.
+//! 
+//! 
+//! ## What does this crate even do?
+//! 
+//! This crate provides methods to handle webhook requests, along with 2
+//! binaries, one for generating the incoming message schema, and another for
+//! actually running the server.
+//! 
+//! Because the webhook is the "hub" of ARCS, there are 4 different targets
+//! which it provides access to. These targets are:
+//! 
+//! - `frontend`
+//! - `deploy`
+//! - `sql`
+//! - `discord`
+//! 
+//! The `frontend` and `deploy` targets are pretty self-explanitory, just sending
+//! messages to the servers. The `sql` target has predefined queries, creating a
+//! predefined set of actions to prevent sending raw SQL queries. The `discord`
+//! target can send error/deploy messages of different types to the CTF
+//! participants, the CTF admins, the CTF challenge writers, or any combination
+//! of those. 
+//! 
+//! 
+//! #### Something important to note:
+//! 
+//! _The webhook crate functions as the main "hub" of the system, and is
+//! therefore a __SINGLE POINT OF FAILURE__. For this reason, it is written in
+//! mostly safe rust, with a focus on __NEVER PANICKING OR CRASHING__._
+//! 
+//! ## Some things to note:
+//! 
+//! - [payloads::incoming::Incoming] is the shape of data sent to the webhook
+//!   server.
+//! - [payloads::outgoing::Outgoing] is the shape of data returned from the
+//!   webhook server.
+//! - The command `cargo run --bin generate_meta` will export the JSON schema
+//!   for an incoming payload in `./meta/incoming.schema.json`.
+//! 
+//! 
+
 
 pub mod payloads;
 pub mod handlers;
