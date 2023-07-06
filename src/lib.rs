@@ -1,3 +1,8 @@
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+)]
+
 pub mod payloads;
 pub mod handlers;
 
@@ -46,6 +51,8 @@ mod http_client {
     use reqwest::Client;
 
     lazy_static! {
+        // FIXME: Think of a way to not use `unwrap`.
+        #[warn(clippy::unwrap_used)]
         pub static ref DEFAULT: Client = {
             Client::builder()
                 .user_agent("ARCS webhook requests")

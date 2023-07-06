@@ -53,9 +53,9 @@ pub async fn handle(mut ctx: super::Ctx, query: SolveQuery) -> Result<FromSql, F
             use super::prepared::users::{ user_is_on_team, UserIsOnTeamOutcome::* };
 
             match user_is_on_team(&mut ctx, user_id, team_id).await? {
-                UserDoesNotExist => return Err(FromSqlErr::DoesNotExist(user_id)),
-                UserNotOnTeam => return Err(FromSqlErr::Auth),
-                UserIsOnTeam => (),
+                DoesNotExist => return Err(FromSqlErr::DoesNotExist(user_id)),
+                NotOnTeam => return Err(FromSqlErr::Auth),
+                IsOnTeam => (),
             }
 
             if !check_user_auth(&mut ctx, user_id, user_auth).await? {
