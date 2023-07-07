@@ -12,11 +12,21 @@ use actix_web::{
 };
 use webhook_rs::start_db_connection;
 
-macro_rules! verify_env {
-    ($fn:path: $name:literal) => {
-        if let Err(e) = $fn() {
-            error!("Failed to find {} env variables {e}. Aborting...", $name);
-            std::process::exit(1);
+macro_rules! verify_envs {
+    ($($fn:path: $name:literal),+ $(,)?) => {
+        {
+            let mut failed = false;
+            $(
+                if let Err(e) = $fn() {
+                    error!("Failed to find {} env variables {e}", $name);
+                    failed |= true;
+                }
+            )+
+
+            if failed {
+                error!("Aborting...");
+                std::process::exit(1);
+            }
         }
     };
 }
@@ -28,14 +38,20 @@ async fn main() -> std::io::Result<()> {
 
     {
         use env::checks::*;
-        verify_env!(main: "main");
-        verify_env!(sql: "sql");
-        verify_env!(discord: "discord");
-        verify_env!(auth: "auth");
+        verify_envs!(
+            main: "main",
+            sql: "sql",
+            discord: "discord",
+            auth: "auth",
+        );
     }
-
-
-    start_db_connection().await;
+    
+    if let Err(e) = start_db_connection().await {
+        error!("Failed to initialize database connection.");
+        error!("Error: {e}");
+        error!("Aborting...");
+        std::process::exit(1);
+    }
 
 
     let ip = "0.0.0.0";

@@ -1,9 +1,3 @@
-#![deny(
-    clippy::unwrap_used,
-    clippy::expect_used,
-)]
-#![warn(missing_docs)]
-
 //! # ARCS Webhook
 //! 
 //! ### What is ARCS?
@@ -36,12 +30,12 @@
 //! - `sql`
 //! - `discord`
 //! 
-//! The `frontend` and `deploy` targets are pretty self-explanitory, just sending
-//! messages to the servers. The `sql` target has predefined queries, creating a
-//! predefined set of actions to prevent sending raw SQL queries. The `discord`
-//! target can send error/deploy messages of different types to the CTF
-//! participants, the CTF admins, the CTF challenge writers, or any combination
-//! of those. 
+//! The `frontend` and `deploy` targets are pretty self-explanitory, just
+//! sending messages to the servers. The `sql` target has predefined queries,
+//! creating a predefined set of actions to prevent sending raw SQL queries. The
+//! `discord` target can send error/deploy messages of different types to the
+//! CTF participants, the CTF admins, the CTF challenge writers, or any
+//! combination of those. 
 //! 
 //! 
 //! #### Something important to note:
@@ -59,8 +53,13 @@
 //! - The command `cargo run --bin generate_meta` will export the JSON schema
 //!   for an incoming payload in `./meta/incoming.schema.json`.
 //! 
-//! 
 
+
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+)]
+#![warn(missing_docs)]
 
 pub mod payloads;
 pub mod handlers;
@@ -74,23 +73,58 @@ pub use sql::start_db_connection;
 
 #[allow(unused_macros)]
 pub mod logging {
+    //! Contains the macros:
+    //! 
+    //! - [trace]
+    //! - [debug]
+    //! - [info]
+    //! - [warn]
+    //! - [error]
+    //! 
+    //! Each of these does correspond to a relevant
+
     use arcs_logging_rs::with_target;
     with_target! { "Webhook" }
 
+    /// A display struct that helps with printing out user-entered information
+    /// without having to worry about clogging up logs with escape sequences,
+    /// long usernames, giant wrong flags, etc.
+    /// 
+    /// If the string is longer than the maximum number of characters, it is
+    /// truncated and `...` is appended.
+    /// 
+    /// A shortened string can be created either by using [`Self::new()`] or
+    /// [`shortened()`].
     pub struct Shortened<'a>(&'a str, bool);
-    pub fn shortened(string: &str, max_len: usize) -> Shortened {
-        let (display_name, shortened) =  if string.chars().count() >= max_len {
-            if let Some((idx, _)) = string.char_indices().nth(max_len-3) {
-                (&string[..idx], true)
-            } else { (string, false) }
-        } else { (string, false) };
 
-        Shortened(display_name, shortened)
+    impl<'a> Shortened<'a> {
+        /// Creates a new displayable shortened string. The lifetime of `string`
+        /// determines the lifetime of the [Shortened].
+        /// 
+        /// `max_len` is the maximum length of the *raw characters* of the
+        /// string. Please note that the length of the displayed string may be
+        /// longer than the initial length of the string due to escaped control
+        /// characters and control
+        pub fn new(string: &'a str, max_len: usize) -> Self {
+            let (display_name, shortened) =  if string.chars().count() >= max_len {
+                if let Some((idx, _)) = string.char_indices().nth(max_len-3) {
+                    (&string[..idx], true)
+                } else { (string, false) }
+            } else { (string, false) };
+    
+            Self(display_name, shortened)
+        }
+    }
+
+    /// This is a utility function for the associated function
+    /// [`Shortened::new()`][Shortened]. See that function for details.
+    pub fn shortened(string: &str, max_len: usize) -> Shortened {
+        Shortened::new(string, max_len)
     }
 
     impl<'a> std::fmt::Display for Shortened<'a> {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "{}", self.0)?;
+            write!(f, "{}", self.0.escape_debug())?;
             if self.1 {
                 write!(f, "...")
             } else {
