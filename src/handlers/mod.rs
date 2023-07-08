@@ -1,7 +1,16 @@
-pub mod deploy;
-pub mod discord;
-pub mod frontend;
-pub mod sql;
+//! This module contains all the code for handling any of the incoming queries.
+//! 
+//! The most notable parts of this module are:
+//! - [`Handle`] (the trait allowing dispatching and sub-dispatching of incoming
+//!   message instructions)
+//! - [`OutgoingErr`] (the trait allowing the conversion of an error struct to
+//!   response JSON/status codes)
+
+// TODO: Document these!!!
+mod deploy;
+mod discord;
+mod frontend;
+mod sql;
 
 use async_trait::async_trait;
 
@@ -30,9 +39,19 @@ use crate::payloads::{incoming::Incoming, outgoing::Outgoing};
 /// ```
 pub type ResponseFrom<T> = Result<<T as Handle>::SuccessPayload, <T as Handle>::ErrorPayload>;
 
+/// This trait is used to create the error messages returned if a query fails.
+/// 
+/// The `body()` function returns a result in case there is an error converting
+/// to a [`serde_json::Value`].
 pub trait OutgoingErr
 where Self: Sized {
+    /// Get the status code that the error should return. This may not be the
+    /// final status code returned because the server prioritizes returning
+    /// 500-level errors to not overblame.
     fn status_code(&self) -> u16;
+
+    /// Get the body of the error response. If there is an error converting to a
+    /// [`serde_json::Value`], then an `Err(String)` can be returned instead.
     fn body(self) -> Result<serde_json::Value, String>;
 }
 
@@ -62,6 +81,11 @@ where Self: Sized {
     /// unsuccessfully or if there is an error in the handling.
     type ErrorPayload: OutgoingErr;
 
+    /// This function does most of the "heavy lifting" of the server overall.
+    /// 
+    /// If the handling of request is infallible, (even if it contains errors as
+    /// in [`Outgoing`],) [`std::convert::Infallible`] can be used as a
+    /// placeholder for the not-yet-stable never type.
     async fn handle(self) -> Result<Self::SuccessPayload, Self::ErrorPayload>;
 }
 

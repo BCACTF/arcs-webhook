@@ -1,3 +1,11 @@
+//! Defines the shape for an incoming message.
+//! 
+//! See:
+//! - [`frontend`]
+//! - [`deploy`]
+//! - [`discord`]
+//! - [`sql`]
+
 pub mod discord;
 pub mod deploy;
 pub mod sql;

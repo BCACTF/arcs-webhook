@@ -90,8 +90,12 @@ pub enum Token {
     Oauth,
 }
 
-
-pub fn check_matches(list: &[Token], bytes: &[u8]) -> bool {
+/// This is a crate-public function that will check if any specific bytes match
+/// any of the specified tokens.
+/// 
+/// This is currently only extenrally used to check for a valid the
+/// `ALLOWED_OAUTH_TOKEN` in the sql handler.
+pub (crate) fn check_matches(list: &[Token], bytes: &[u8]) -> bool {
     fn black_box_or(val_1: bool, val_2: bool) -> bool {
         val_1 || val_2
     }

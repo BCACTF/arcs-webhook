@@ -68,7 +68,7 @@ pub mod env;
 mod auth;
 mod sql;
 
-pub use auth::{ AuthHeader, check_matches, Token };
+pub use auth::{ AuthHeader, Token };
 pub use sql::start_db_connection;
 
 #[allow(unused_macros)]
