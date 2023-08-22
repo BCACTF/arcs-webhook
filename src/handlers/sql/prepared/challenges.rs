@@ -150,6 +150,7 @@ pub async fn update_chall(ctx: &mut Ctx, id: Uuid, input: ChallInput) -> Result<
 
 #[derive(Debug, Clone)]
 pub struct NewChallInput {
+    pub id: Option<Uuid>,
     pub name: String,
     pub description: String,
     pub points: i32,
@@ -168,12 +169,27 @@ pub async fn create_chall(ctx: &mut Ctx, input: NewChallInput) -> Result<Chall, 
     let query = query!(
         r#"
             INSERT INTO challenges (
+                id,
                 name, description, points,
                 authors, hints, categories, tags,
                 visible, source_folder, flag
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
+            VALUES (COALESCE($1, uuid_generate_v4()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            ON CONFLICT (source_folder)
+            DO UPDATE SET
+                id = COALESCE($1, uuid_generate_v4()),
+                name = $2,
+                description = $3,
+                points = $4,
+                authors = $5,
+                hints = $6,
+                categories = $7,
+                tags = $8,
+                visible = $9,
+                source_folder = $10,
+                flag = $11;
         "#,
+        input.id,
         input.name: String,
         input.description,
         input.points,

@@ -8,6 +8,8 @@ use crate::payloads::incoming::deploy::ChallIdentifier;
 
 use crate::payloads::outgoing::deploy::{FromDeploy, FromDeployErr};
 
+use super::sql::get_chall_id_by_source_folder;
+
 use super::{Handle, ResponseFrom};
 
 #[async_trait]
@@ -18,14 +20,27 @@ impl Handle for ToDeploy {
         trace!("Handling deploy req");
 
         let (req_type, polling_id, chall_name) = match self {
-            Self::Deploy { chall, force_wipe: _ } => ( // FIXME: If force_wipe isn't enabled, try to access the current ID.
-                "deploy",
-                uuid::Uuid::new_v4(),
-                match chall {
-                    ChallIdentifier::CurrDeployedId(id) => id.to_string(),
-                    ChallIdentifier::Folder(s) => s,
-                }
-            ),
+            Self::Deploy { chall, force_wipe } => {
+                let id = if force_wipe { uuid::Uuid::new_v4() } else {
+                    match &chall {
+                        &ChallIdentifier::CurrDeployedId(id) => id,
+                        ChallIdentifier::Folder(source_folder) => {
+                            let Ok(id) = get_chall_id_by_source_folder(&source_folder).await else {
+                                return Err(FromDeployErr::DbError);
+                            };
+                            id.unwrap_or_else(uuid::Uuid::new_v4)
+                        }
+                    }
+                };
+                ( // FIXME: If force_wipe isn't enabled, try to access the current ID.
+                    "deploy",
+                    id,
+                    match chall {
+                        ChallIdentifier::CurrDeployedId(id) => id.to_string(),
+                        ChallIdentifier::Folder(s) => s,
+                    }
+                )
+            },
             Self::Poll { id } => ("poll", id, "".to_string()),
             Self::Remove { chall } => ("delete", chall, "".to_string())
         };

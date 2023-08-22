@@ -5,7 +5,7 @@ use {
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "__sync_type", rename_all = "snake_case")]
+#[serde(tag = "__sync_type", rename_all = "snake_case", content = "id")]
 pub enum SyncType {
     Chall(Uuid),
     AllChalls,

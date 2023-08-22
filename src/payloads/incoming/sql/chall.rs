@@ -25,6 +25,8 @@ pub struct Link {
 pub enum ChallQuery {
     #[serde(rename = "create")]
     CreateChallenge {
+        id: Option<Uuid>,
+        
         name: String,
         description: String,
         points: i32,
