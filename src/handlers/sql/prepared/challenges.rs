@@ -160,6 +160,8 @@ pub struct NewChallInput {
     pub links: Vec<Link>,
     pub visible: bool,
     pub source_folder: String,
+
+    pub flag: String,
 }
 
 pub async fn create_chall(ctx: &mut Ctx, input: NewChallInput) -> Result<Chall, sqlx::Error> {
@@ -168,9 +170,9 @@ pub async fn create_chall(ctx: &mut Ctx, input: NewChallInput) -> Result<Chall, 
             INSERT INTO challenges (
                 name, description, points,
                 authors, hints, categories, tags,
-                visible, source_folder
+                visible, source_folder, flag
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
         "#,
         input.name: String,
         input.description,
@@ -180,7 +182,8 @@ pub async fn create_chall(ctx: &mut Ctx, input: NewChallInput) -> Result<Chall, 
         &input.categories,
         &input.tags,
         input.visible,
-        &input.source_folder
+        &input.source_folder,
+        input.flag
     );
     query.execute(&mut *ctx).await?;
 

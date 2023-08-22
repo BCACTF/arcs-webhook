@@ -36,6 +36,8 @@ pub enum ChallQuery {
 
         visible: bool,
         source_folder: String,
+
+        flag: String,
     },
     #[serde(rename = "update")]
     UpdateChallenge {

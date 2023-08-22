@@ -31,13 +31,13 @@ pub async fn handle(mut ctx: super::Ctx, query: ChallQuery) -> Result<FromSql, F
         ChallQuery::CreateChallenge {
             name, description, points,
             authors, hints, categories, tags, links,
-            visible, source_folder,
+            visible, source_folder, flag
         } => {
             debug!("SQL chall req classified as 'CreateChallenge<`{name}`>' req");
             FromSql::Chall(create_chall(&mut ctx, NewChallInput {
                 name, description, points,
                 authors, hints, categories, tags, links,
-                visible, source_folder
+                visible, source_folder, flag,
             }).await?)
         },
         ChallQuery::UpdateChallenge {

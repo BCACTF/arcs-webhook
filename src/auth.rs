@@ -133,7 +133,7 @@ impl Header for AuthHeader {
 
 impl AuthHeader {
     pub fn check_matches(&self, list: &[Token]) -> bool {
-        let Some(stripped) = self.data.strip_prefix(b"Bearer") else { return false; };
+        let Some(stripped) = self.data.strip_prefix(b"Bearer ") else { return false; };
 
         check_matches(list, stripped)
     }

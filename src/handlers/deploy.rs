@@ -26,14 +26,14 @@ impl Handle for ToDeploy {
                     ChallIdentifier::Folder(s) => s,
                 }
             ),
-            Self::Poll { id } => ("poll", id, "aaaaaaaaa".to_string()),
-            Self::Remove { chall } => ("delete", chall, "jxcz".to_string())
+            Self::Poll { id } => ("poll", id, "".to_string()),
+            Self::Remove { chall } => ("delete", chall, "".to_string())
         };
 
 
         // FIXME: Make the deploy server not have a different number of underscores
         let body = serde_json::json!({
-            "_type": req_type,
+            "__type": req_type,
             "deploy_identifier": polling_id,
             "chall_name": chall_name,
         });
