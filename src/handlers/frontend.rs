@@ -54,7 +54,7 @@ impl Handle for ToFrontend {
                     Self::Sync(sync_type) => Ok(FromFrontend::Synced(sync_type)),
                 }
             } else {
-                warn!("Frontend req rturned error");
+                warn!("Frontend req returned error");
                 
                 match self {
                     Self::Sync(sync_type) => Err(FromFrontendErr::FailedToSync(sync_type)),
