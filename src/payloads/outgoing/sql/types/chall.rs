@@ -26,12 +26,14 @@ pub struct SerializableChall {
 
 
     pub links: Links,
+
+    pub tiebreaker: bool,
 }
 impl From<SerializableChall> for Chall {
     fn from(SerializableChall {
         id, name, description, points,
         authors, hints, categories, tags,
-        solve_count, visible, source_folder,
+        solve_count, visible, source_folder, tiebreaker,
         links: Links {
             nc: links_nc,
             web: links_web,
@@ -42,7 +44,7 @@ impl From<SerializableChall> for Chall {
         Chall {
             id, name, description, points,
             authors, hints, categories, tags,
-            solve_count, visible, source_folder,
+            solve_count, visible, source_folder, tiebreaker,
             links_nc, links_web, links_admin, links_static,
         }
     }
@@ -51,13 +53,13 @@ impl From<Chall> for SerializableChall {
     fn from(Chall {
         id, name, description, points,
         authors, hints, categories, tags,
-        solve_count, visible, source_folder,
+        solve_count, visible, source_folder, tiebreaker,
         links_nc: nc, links_web: web, links_admin: admin, links_static: static_links,
     }: Chall) -> Self {
         SerializableChall {
             id, name, description, points,
             authors, hints, categories, tags,
-            solve_count, visible, source_folder,
+            solve_count, visible, source_folder, tiebreaker,
             links: Links { nc, web, admin, static_links },
         }
     }
@@ -77,6 +79,8 @@ pub struct Chall {
     pub solve_count: i32,
     pub visible: bool,
     pub source_folder: String,
+
+    pub tiebreaker: bool,
 
 
     pub links_nc: Vec<String>,

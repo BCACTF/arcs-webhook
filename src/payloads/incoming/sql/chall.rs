@@ -40,6 +40,7 @@ pub enum ChallQuery {
         source_folder: String,
 
         flag: String,
+        tiebreaker: bool,
     },
     #[serde(rename = "update")]
     UpdateChallenge {
@@ -56,6 +57,8 @@ pub enum ChallQuery {
 
         visible: Option<bool>,
         source_folder: Option<String>,
+
+        tiebreaker: Option<bool>,
     },
     #[serde(rename = "get")]
     GetChallenge {

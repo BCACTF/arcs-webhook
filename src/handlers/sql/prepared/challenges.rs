@@ -30,7 +30,7 @@ pub async fn get_chall(ctx: &mut Ctx, id: Uuid) -> Result<Option<Chall>, sqlx::E
                 challenges.id,
                 name as "name: _", description, points,
                 authors, hints, categories, tags,
-                solve_count, visible, source_folder,
+                solve_count, visible, source_folder, tiebreaker,
                 COALESCE(array_agg(links.url) FILTER (WHERE links.type = 'nc'    ), ARRAY[]::text[]) as "links_nc!",
                 COALESCE(array_agg(links.url) FILTER (WHERE links.type = 'web'   ), ARRAY[]::text[]) as "links_web!",
                 COALESCE(array_agg(links.url) FILTER (WHERE links.type = 'admin' ), ARRAY[]::text[]) as "links_admin!",
@@ -53,7 +53,7 @@ pub async fn get_chall_by_source_folder(ctx: &mut Ctx, folder: &str) -> Result<O
                 challenges.id,
                 name as "name: _", description, points,
                 authors, hints, categories, tags,
-                solve_count, visible, source_folder,
+                solve_count, visible, source_folder, tiebreaker,
                 COALESCE(array_agg(links.url) FILTER (WHERE links.type = 'nc'    ), ARRAY[]::text[]) as "links_nc!",
                 COALESCE(array_agg(links.url) FILTER (WHERE links.type = 'web'   ), ARRAY[]::text[]) as "links_web!",
                 COALESCE(array_agg(links.url) FILTER (WHERE links.type = 'admin' ), ARRAY[]::text[]) as "links_admin!",
@@ -76,7 +76,7 @@ pub async fn get_all_challs(ctx: &mut Ctx) -> Result<Vec<Chall>, sqlx::Error> {
                 challenges.id,
                 name as "name: _", description, points,
                 authors, hints, categories, tags,
-                solve_count, visible, source_folder,
+                solve_count, visible, source_folder, tiebreaker,
                 COALESCE(array_agg(links.url) FILTER (WHERE links.type = 'nc'    ), ARRAY[]::text[]) as "links_nc!",
                 COALESCE(array_agg(links.url) FILTER (WHERE links.type = 'web'   ), ARRAY[]::text[]) as "links_web!",
                 COALESCE(array_agg(links.url) FILTER (WHERE links.type = 'admin' ), ARRAY[]::text[]) as "links_admin!",
@@ -102,6 +102,8 @@ pub struct ChallInput {
     pub links: Option<Vec<Link>>,
     pub visible: Option<bool>,
     pub source_folder: Option<String>,
+
+    pub tiebreaker: Option<bool>,
 }
 
 pub async fn update_chall(ctx: &mut Ctx, id: Uuid, input: ChallInput) -> Result<Option<Chall>, sqlx::Error> {
@@ -117,7 +119,8 @@ pub async fn update_chall(ctx: &mut Ctx, id: Uuid, input: ChallInput) -> Result<
                 categories = COALESCE($7, categories),
                 tags = COALESCE($8, tags),
                 visible = COALESCE($9, visible),
-                source_folder = COALESCE($10, source_folder)
+                source_folder = COALESCE($10, source_folder),
+                tiebreaker = COALESCE($11, tiebreaker)
             WHERE id = $1;
         "#,
         id,
@@ -130,6 +133,7 @@ pub async fn update_chall(ctx: &mut Ctx, id: Uuid, input: ChallInput) -> Result<
         input.tags.as_deref(),
         input.visible,
         input.source_folder,
+        input.tiebreaker,
     );
     let affected = query
         .execute(&mut *ctx)
@@ -151,18 +155,23 @@ pub async fn update_chall(ctx: &mut Ctx, id: Uuid, input: ChallInput) -> Result<
 #[derive(Debug, Clone)]
 pub struct NewChallInput {
     pub id: Option<Uuid>,
+
     pub name: String,
     pub description: String,
     pub points: i32,
+    
     pub authors: Vec<String>,
     pub hints: Vec<String>,
     pub categories: Vec<String>,
     pub tags: Vec<String>,
     pub links: Vec<Link>,
+    
     pub visible: bool,
     pub source_folder: String,
 
     pub flag: String,
+
+    pub tiebreaker: bool,
 }
 
 pub async fn create_chall(ctx: &mut Ctx, input: NewChallInput) -> Result<Chall, sqlx::Error> {
@@ -172,9 +181,9 @@ pub async fn create_chall(ctx: &mut Ctx, input: NewChallInput) -> Result<Chall, 
                 id,
                 name, description, points,
                 authors, hints, categories, tags,
-                visible, source_folder, flag
+                visible, source_folder, flag, tiebreaker
             )
-            VALUES (COALESCE($1, uuid_generate_v4()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            VALUES (COALESCE($1, uuid_generate_v4()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             ON CONFLICT (source_folder)
             DO UPDATE SET
                 id = COALESCE($1, uuid_generate_v4()),
@@ -187,7 +196,8 @@ pub async fn create_chall(ctx: &mut Ctx, input: NewChallInput) -> Result<Chall, 
                 tags = $8,
                 visible = $9,
                 source_folder = $10,
-                flag = $11;
+                flag = $11,
+                tiebreaker = $12;
         "#,
         input.id,
         input.name: String,
@@ -199,7 +209,8 @@ pub async fn create_chall(ctx: &mut Ctx, input: NewChallInput) -> Result<Chall, 
         &input.tags,
         input.visible,
         &input.source_folder,
-        input.flag
+        input.flag,
+        input.tiebreaker,
     );
     query.execute(&mut *ctx).await?;
 

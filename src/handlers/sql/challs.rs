@@ -33,28 +33,28 @@ pub async fn handle(mut ctx: super::Ctx, query: ChallQuery) -> Result<FromSql, F
             id,
             name, description, points,
             authors, hints, categories, tags, links,
-            visible, source_folder, flag
+            visible, source_folder, flag, tiebreaker,
         } => {
             debug!("SQL chall req classified as 'CreateChallenge<`{name}`>' req");
             FromSql::Chall(create_chall(&mut ctx, NewChallInput {
                 id,
                 name, description, points,
                 authors, hints, categories, tags, links,
-                visible, source_folder, flag,
+                visible, source_folder, flag, tiebreaker,
             }).await?)
         },
         ChallQuery::UpdateChallenge {
             id,
             name, description, points,
             authors, hints, categories, tags, links,
-            visible, source_folder
+            visible, source_folder, tiebreaker,
         } => {
             debug!("SQL chall req classified as 'UpdateChallenge<`{id}`>' req");
 
             let opt_chall = update_chall(&mut ctx, id, ChallInput {
                 name, description, points,
                 authors, hints, categories, tags, links,
-                visible, source_folder,
+                visible, source_folder, tiebreaker,
             }).await?;
 
             if let Some(chall) = opt_chall {
