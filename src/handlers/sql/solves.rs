@@ -73,12 +73,12 @@ pub async fn handle(mut ctx: super::Ctx, query: SolveQuery) -> Result<FromSql, F
                     use crate::payloads::incoming::discord::*;
                     use crate::handlers::Handle;
 
-                    info!("First blood on {}! Sending discord message...", blood_details.chall);
+                    info!("First blood on {}! Sending discord message...", blood_details.chall.str());
 
                     let message = ToDiscord::Participant(ParticipantMessage::FirstBlood {
-                        chall_name: blood_details.chall,
-                        team: blood_details.team,
-                        user: blood_details.user,
+                        chall_name: blood_details.chall.string(),
+                        team: blood_details.team.string(),
+                        user: blood_details.user.string(),
                     });
 
                     if let Err(e) = message.handle().await {

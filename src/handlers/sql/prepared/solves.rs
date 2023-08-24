@@ -124,8 +124,10 @@ pub async fn attempt_solve(ctx: &mut Ctx, input: SolveAttemptInput) -> Result<So
         .ok_or(sqlx::Error::RowNotFound)
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FirstBloodInfo { pub chall: String, pub user: String, pub team: String }
+use crate::sql::CiText;
+
+#[derive(Debug, Clone)]
+pub struct FirstBloodInfo { pub chall: CiText, pub user: CiText, pub team: CiText }
 pub async fn first_blood_details(ctx: &mut Ctx, solve_id: Uuid) -> Result<Option<FirstBloodInfo>, sqlx::Error> {
     let query = query_as!(
         FirstBloodInfo,
@@ -145,7 +147,7 @@ pub async fn first_blood_details(ctx: &mut Ctx, solve_id: Uuid) -> Result<Option
                     SELECT
                         att.id AS att_id
                     FROM solve_attempts AS att
-                        WHERE att.challenge_id = chall.id
+                        WHERE att.challenge_id = chall.id AND att.correct
                     ORDER BY att.inserted_at LIMIT 1
                 ) = $1;
         "#,

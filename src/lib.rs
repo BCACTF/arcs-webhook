@@ -134,6 +134,7 @@ mod sql {
     pub struct CiText(String);
     impl CiText {
         pub fn string(self) -> String { self.0 }
+        pub fn str(&self) -> &str { &self.0 }
         pub fn wrap(s: String) -> Self { Self(s) }
     }
 
