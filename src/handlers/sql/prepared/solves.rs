@@ -123,3 +123,33 @@ pub async fn attempt_solve(ctx: &mut Ctx, input: SolveAttemptInput) -> Result<So
         .await?
         .ok_or(sqlx::Error::RowNotFound)
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FirstBloodInfo { pub chall: String, pub user: String, pub team: String }
+pub async fn first_blood_details(ctx: &mut Ctx, solve_id: Uuid) -> Result<Option<FirstBloodInfo>, sqlx::Error> {
+    let query = query_as!(
+        FirstBloodInfo,
+        r#"
+            SELECT
+                chall.name AS "chall: _",
+                users.name AS "user: _",
+                team.name AS "team: _"
+            FROM solve_attempts AS attempt
+                LEFT JOIN challenges AS chall ON chall.id = attempt.challenge_id
+                LEFT JOIN teams AS team ON team.id = attempt.team_id
+                LEFT JOIN users AS users ON users.id = attempt.user_id
+            WHERE
+                attempt.id = $1 AND
+                attempt.correct AND
+                (
+                    SELECT
+                        att.id AS att_id
+                    FROM solve_attempts AS att
+                        WHERE att.challenge_id = chall.id
+                    ORDER BY att.inserted_at LIMIT 1
+                ) = $1;
+        "#,
+        solve_id,
+    );
+    query.fetch_optional(ctx).await
+}
