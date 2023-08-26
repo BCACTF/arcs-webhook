@@ -72,8 +72,12 @@ pub async fn get_chall_id_by_source_folder(source_folder: &str) -> Result<Option
         return Err("Failed to get db connection".into())
     };
 
-    let Ok(id) = get_chall_by_source_folder(&mut sql_connection, source_folder).await else {
-        return Err("Failed to check for challenge".into())
+    let id = match get_chall_by_source_folder(&mut sql_connection, source_folder).await {
+        Ok(id) => id,
+        Err(e) => {
+            debug!("Db error: {e}");
+            return Err("Failed to check for challenge".into())
+        },
     };
 
     Ok(id.map(|c| c.id))

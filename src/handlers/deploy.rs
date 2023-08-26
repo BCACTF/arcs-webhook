@@ -25,8 +25,13 @@ impl Handle for ToDeploy {
                     match &chall {
                         &ChallIdentifier::CurrDeployedId(id) => id,
                         ChallIdentifier::Folder(source_folder) => {
-                            let Ok(id) = get_chall_id_by_source_folder(&source_folder).await else {
-                                return Err(FromDeployErr::DbError);
+                            let id = match get_chall_id_by_source_folder(&source_folder).await {
+                                Ok(id) => id,
+                                Err(e) => {
+                                    debug!("Database error: {e}");
+                                    return Err(FromDeployErr::DbError);
+                                }
+
                             };
                             id.unwrap_or_else(uuid::Uuid::new_v4)
                         }

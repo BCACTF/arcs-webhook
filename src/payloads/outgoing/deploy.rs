@@ -6,26 +6,31 @@ use uuid::Uuid;
 use crate::handlers::OutgoingErr;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+
+#[serde(rename_all = "snake_case")]
 pub enum Status {
     Started,
     Building,
     Pulling,
     Pushing,
     Uploading,
+    Success,
 
-    Failed,
+    Failure,
+
+    Unknown,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeploymentStatus {
     pub (crate) status: Status,
     pub (crate) status_time: Duration,
-    pub (crate) chall_id: Uuid,
     pub (crate) chall_name: Option<String>,
-    pub (crate) data: String,
+    pub (crate) poll_id: Uuid,
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(untagged)]
 pub enum FromDeploy {
     Status(DeploymentStatus),
 }
