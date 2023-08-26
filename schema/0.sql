@@ -14,7 +14,7 @@ CREATE TABLE teams (
     eligible boolean DEFAULT false NOT NULL,
     affiliation varchar(255),
 
-    hashed_password varchar(255),
+    hashed_password varchar(255) NOT NULL,
     inserted_at timestamp(0) without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp(0) without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -28,9 +28,9 @@ CREATE TABLE challenges (
     flag varchar(255) NOT NULL,
     points integer NOT NULL,
 
-    authors varchar(255)[],
-    hints varchar(255)[],
-    categories text[],
+    authors varchar(255)[] NOT NULL,
+    hints varchar(255)[] NOT NULL,
+    categories text[] NOT NULL,
     tags varchar(255)[] NOT NULL,
 
     solve_count integer DEFAULT 0 NOT NULL,
