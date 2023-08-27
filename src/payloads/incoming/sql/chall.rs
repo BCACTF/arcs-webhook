@@ -16,8 +16,8 @@ pub enum LinkType {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Link {
     #[serde(rename = "type")]
-    link_type: LinkType,
-    location: String,
+    pub link_type: LinkType,
+    pub location: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]

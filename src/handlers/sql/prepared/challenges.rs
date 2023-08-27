@@ -138,15 +138,53 @@ pub async fn update_chall(ctx: &mut Ctx, id: Uuid, input: ChallInput) -> Result<
 
     if affected != 1 { return Ok(None) }
 
-    
+    if let Some(links) = input.links {
+        set_chall_links(&mut *ctx, id, links).await?;
+    }
     set_chall_updated(&mut *ctx, id).await?;
 
     let Some(output) = get_chall(ctx, id).await? else {
         return Err(sqlx::Error::RowNotFound);
     };
+
     Ok(Some(output))
 }
 
+
+pub async fn set_chall_links(ctx: &mut Ctx, id: Uuid, links: Vec<Link>) -> Result<(), sqlx::Error> {
+    let (web_links, nc_links, admin_links, static_links) = {
+        let mut web_links = vec![];
+        let mut nc_links = vec![];
+        let mut admin_links = vec![];
+        let mut static_links = vec![];
+
+        for link in links {
+            use crate::payloads::incoming::sql::LinkType::*;
+            match link.link_type {
+                Web => web_links.push(link.location),
+                Nc => nc_links.push(link.location),
+                Admin => admin_links.push(link.location),
+                Static => static_links.push(link.location),
+            }
+        }
+        (web_links, nc_links, admin_links, static_links)
+    };
+
+    let query = query!(
+        r#"
+        SELECT replace_challenge_links($1, $2, $3, $4, $5);
+        "#,
+        id,
+        &web_links,
+        &nc_links,
+        &admin_links,
+        &static_links,
+    );
+    query.execute(&mut *ctx).await?;
+
+    set_chall_updated(ctx, id).await?;
+    Ok(())
+}
 
 #[derive(Debug, Clone)]
 pub struct NewChallInput {
@@ -206,6 +244,8 @@ pub async fn create_chall(ctx: &mut Ctx, input: NewChallInput) -> Result<Chall, 
     let Some(output) = get_chall_by_source_folder(&mut *ctx, &input.source_folder).await? else {
         return Err(sqlx::Error::RowNotFound);
     };
+
+    set_chall_links(&mut *ctx, output.id, input.links).await?;
 
     set_chall_updated(ctx, output.id).await?;
     Ok(output)
