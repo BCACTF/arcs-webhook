@@ -7,14 +7,16 @@ use uuid::Uuid;
 pub struct SerializableTeam {
     pub id: Uuid,
     pub name: CiText,
+    pub score: i32,
     pub last_solve: Option<u64>,
     pub eligible: bool,
     pub affiliation: Option<String>,
 }
 impl From<Team> for SerializableTeam {
-    fn from(Team { id, name, last_solve, eligible, affiliation }: Team) -> Self {
+    fn from(Team { id, name, score, last_solve, eligible, affiliation }: Team) -> Self {
         SerializableTeam {
             id, name, eligible, affiliation,
+            score,
             last_solve: last_solve.map(|dt| dt.timestamp() as u64),
         }
     }
@@ -25,6 +27,7 @@ impl From<Team> for SerializableTeam {
 pub struct Team {
     pub id: Uuid,
     pub name: CiText,
+    pub score: i32,
     pub last_solve: Option<chrono::NaiveDateTime>,
     pub eligible: bool,
     pub affiliation: Option<String>,

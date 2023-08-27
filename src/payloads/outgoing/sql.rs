@@ -34,6 +34,7 @@ pub enum FromSqlErr {
     Auth,
     DoesNotExist(Uuid),
     NameDoesNotExist(String),
+    NameIsTaken(String),
 }
 
 impl From<sqlx::Error> for FromSqlErr {
@@ -63,12 +64,17 @@ impl OutgoingErr for FromSqlErr {
                 "err": "This name does not exist.",
                 "name": name,
             })),
+            Self::NameIsTaken(name) => Ok(serde_json::json!({
+                "err": "A team with this name already exists.",
+                "name": name,
+            })),
         }
     }
     fn status_code(&self) -> u16 {
         match self {
             Self::OtherServerError(_) | Self::DatabaseError => 500,
             Self::DoesNotExist(_) | Self::NameDoesNotExist(_) => 404,
+            Self::NameIsTaken(_) => 400,
             Self::Auth => 403,
         }
     }
