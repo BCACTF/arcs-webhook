@@ -40,7 +40,7 @@ impl Handle for ToFrontend {
         };
 
         let response = DEFAULT
-            .post(crate::env::deploy_address())
+            .post(crate::env::frontend_address())
             .bearer_auth(String::from_utf8_lossy(&crate::auth::webhook_auth()))
             .json(&payload)
             .send()
