@@ -28,7 +28,7 @@ pub async fn get_team(ctx: &mut Ctx, id: Uuid) -> Result<Option<Team>, sqlx::Err
         Team,
         r#"
             SELECT
-                id, name as "name: _",
+                id, name as "name: _", score,
                 last_solve, eligible, affiliation
             FROM teams WHERE id = $1;
         "#,
@@ -43,7 +43,7 @@ pub async fn get_team_by_name(ctx: &mut Ctx, name: &str) -> Result<Option<Team>,
         Team,
         r#"
             SELECT
-                id, name as "name: _",
+                id, name as "name: _", score,
                 last_solve, eligible, affiliation
             FROM teams WHERE name = $1;
         "#,
@@ -58,7 +58,7 @@ pub async fn get_all_teams(ctx: &mut Ctx) -> Result<Vec<Team>, sqlx::Error> {
         Team,
         r#"
             SELECT
-                id, name as "name: _",
+                id, name as "name: _", score,
                 last_solve, eligible, affiliation
             FROM teams;
         "#,

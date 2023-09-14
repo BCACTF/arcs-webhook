@@ -16,8 +16,8 @@ pub enum LinkType {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Link {
     #[serde(rename = "type")]
-    link_type: LinkType,
-    location: String,
+    pub link_type: LinkType,
+    pub location: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -25,6 +25,8 @@ pub struct Link {
 pub enum ChallQuery {
     #[serde(rename = "create")]
     CreateChallenge {
+        id: Option<Uuid>,
+        
         name: String,
         description: String,
         points: i32,
@@ -36,6 +38,8 @@ pub enum ChallQuery {
 
         visible: bool,
         source_folder: String,
+
+        flag: String,
     },
     #[serde(rename = "update")]
     UpdateChallenge {

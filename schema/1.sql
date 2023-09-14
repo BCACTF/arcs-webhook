@@ -21,7 +21,7 @@ CREATE TABLE users (
     name citext NOT NULL UNIQUE,
 
     team_id uuid,
-    score integer DEFAULT 0,
+    score integer NOT NULL DEFAULT 0,
     last_solve timestamp(0) without time zone,
 
 

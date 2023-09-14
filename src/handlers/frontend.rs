@@ -40,7 +40,7 @@ impl Handle for ToFrontend {
         };
 
         let response = DEFAULT
-            .post(crate::env::deploy_address())
+            .post(format!("{}/api/sync", crate::env::frontend_address()))
             .bearer_auth(String::from_utf8_lossy(&crate::auth::webhook_auth()))
             .json(&payload)
             .send()
@@ -54,7 +54,7 @@ impl Handle for ToFrontend {
                     Self::Sync(sync_type) => Ok(FromFrontend::Synced(sync_type)),
                 }
             } else {
-                warn!("Frontend req rturned error");
+                warn!("Frontend req returned error");
                 
                 match self {
                     Self::Sync(sync_type) => Err(FromFrontendErr::FailedToSync(sync_type)),

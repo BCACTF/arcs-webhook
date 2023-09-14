@@ -1,3 +1,4 @@
+use crate::handlers::sql::prepared::solves::first_blood_details;
 use crate::handlers::sql::prepared::users::check_user_auth;
 use crate::logging::*;
 use crate::payloads::*;
@@ -12,7 +13,7 @@ use queries::{
     get_all_solves,
     attempt_solve,
 };
-use queries::{ SolveAttemptInput };
+use queries::SolveAttemptInput;
 
 pub async fn handle(mut ctx: super::Ctx, query: SolveQuery) -> Result<FromSql, FromSqlErr> {
     trace!("Handling SQL solve req");
@@ -62,12 +63,32 @@ pub async fn handle(mut ctx: super::Ctx, query: SolveQuery) -> Result<FromSql, F
                 return Err(FromSqlErr::Auth)
             }
 
-            FromSql::Solve(
-                attempt_solve(
-                    &mut ctx,
-                    SolveAttemptInput { user_id, team_id, chall_id, flag_guess },
-                ).await?
-            )
+            let solve = attempt_solve(
+                &mut ctx,
+                SolveAttemptInput { user_id, team_id, chall_id, flag_guess },
+            ).await?;
+
+            if solve.correct {
+                if let Some(blood_details) = first_blood_details(&mut ctx, solve.id).await? {
+                    use crate::payloads::incoming::discord::*;
+                    use crate::handlers::Handle;
+
+                    info!("First blood on {}! Sending discord message...", blood_details.chall.str());
+
+                    let message = ToDiscord::Participant(ParticipantMessage::FirstBlood {
+                        chall_name: blood_details.chall.string(),
+                        team: blood_details.team.string(),
+                        user: blood_details.user.string(),
+                    });
+
+                    if let Err(e) = message.handle().await {
+                        error!("Sending the discord first blood message failed!");
+                        debug!("Discord err: {e:?}");
+                    }
+                }
+            }
+
+            FromSql::Solve(solve)
         },
 
     };

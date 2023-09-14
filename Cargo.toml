@@ -7,7 +7,7 @@ default-run = "webhook-rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-web = "4.3.1"
+actix-web = { version = "4.3.1", features = ["rustls"] }
 arcs-env-rs = "0.1.0"
 arcs-logging-rs = "0.1.2"
 async-trait = "0.1.68"
@@ -17,7 +17,10 @@ dotenvy = "0.15.7"
 futures = "0.3.28"
 lazy_static = "1.4.0"
 rand = "0.8.5"
-reqwest = { version = "0.11.18", features = ["json"] }
+reqwest = { version = "0.11.18", features = [
+    "__rustls", "hyper-rustls", "json", "rustls", "rustls-pemfile", "rustls-tls", "rustls-tls-webpki-roots",
+    "serde_json", "tokio-rustls", "webpki-roots"
+], default-features = false }
 rust-argon2 = "1.0.0"
 schemars = { version = "0.8.12", features = ["uuid", "uuid1"] }
 serde = { version = "1.0.164", features = ["derive"] }

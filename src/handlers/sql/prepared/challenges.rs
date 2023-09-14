@@ -138,18 +138,57 @@ pub async fn update_chall(ctx: &mut Ctx, id: Uuid, input: ChallInput) -> Result<
 
     if affected != 1 { return Ok(None) }
 
-    
+    if let Some(links) = input.links {
+        set_chall_links(&mut *ctx, id, links).await?;
+    }
     set_chall_updated(&mut *ctx, id).await?;
 
     let Some(output) = get_chall(ctx, id).await? else {
         return Err(sqlx::Error::RowNotFound);
     };
+
     Ok(Some(output))
 }
 
 
+pub async fn set_chall_links(ctx: &mut Ctx, id: Uuid, links: Vec<Link>) -> Result<(), sqlx::Error> {
+    let (web_links, nc_links, admin_links, static_links) = {
+        let mut web_links = vec![];
+        let mut nc_links = vec![];
+        let mut admin_links = vec![];
+        let mut static_links = vec![];
+
+        for link in links {
+            use crate::payloads::incoming::sql::LinkType::*;
+            match link.link_type {
+                Web => web_links.push(link.location),
+                Nc => nc_links.push(link.location),
+                Admin => admin_links.push(link.location),
+                Static => static_links.push(link.location),
+            }
+        }
+        (web_links, nc_links, admin_links, static_links)
+    };
+
+    let query = query!(
+        r#"
+        SELECT replace_challenge_links($1, $2, $3, $4, $5);
+        "#,
+        id,
+        &web_links,
+        &nc_links,
+        &admin_links,
+        &static_links,
+    );
+    query.execute(&mut *ctx).await?;
+
+    set_chall_updated(ctx, id).await?;
+    Ok(())
+}
+
 #[derive(Debug, Clone)]
 pub struct NewChallInput {
+    pub id: Option<Uuid>,
     pub name: String,
     pub description: String,
     pub points: i32,
@@ -160,18 +199,35 @@ pub struct NewChallInput {
     pub links: Vec<Link>,
     pub visible: bool,
     pub source_folder: String,
+
+    pub flag: String,
 }
 
 pub async fn create_chall(ctx: &mut Ctx, input: NewChallInput) -> Result<Chall, sqlx::Error> {
     let query = query!(
         r#"
             INSERT INTO challenges (
+                id,
                 name, description, points,
                 authors, hints, categories, tags,
-                visible, source_folder
+                visible, source_folder, flag
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+            VALUES (COALESCE($1, uuid_generate_v4()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            ON CONFLICT (source_folder)
+            DO UPDATE SET
+                id = COALESCE($1, uuid_generate_v4()),
+                name = $2,
+                description = $3,
+                points = $4,
+                authors = $5,
+                hints = $6,
+                categories = $7,
+                tags = $8,
+                visible = $9,
+                source_folder = $10,
+                flag = $11;
         "#,
+        input.id,
         input.name: String,
         input.description,
         input.points,
@@ -180,13 +236,16 @@ pub async fn create_chall(ctx: &mut Ctx, input: NewChallInput) -> Result<Chall, 
         &input.categories,
         &input.tags,
         input.visible,
-        &input.source_folder
+        &input.source_folder,
+        input.flag
     );
     query.execute(&mut *ctx).await?;
 
     let Some(output) = get_chall_by_source_folder(&mut *ctx, &input.source_folder).await? else {
         return Err(sqlx::Error::RowNotFound);
     };
+
+    set_chall_links(&mut *ctx, output.id, input.links).await?;
 
     set_chall_updated(ctx, output.id).await?;
     Ok(output)

@@ -50,6 +50,9 @@ pub async fn handle(mut ctx: super::Ctx, query: TeamQuery) -> Result<FromSql, Fr
                 return Err(FromSqlErr::OtherServerError("Failed to hash team password.".into()))
             };
 
+            let team_already_exists = get_team_by_name(&mut ctx, &name).await?.is_some();
+            if team_already_exists { return Err(FromSqlErr::NameIsTaken(name)); }
+
             FromSql::Team(
                 create_team(&mut ctx, NewTeamInput {
                     name,
@@ -57,7 +60,8 @@ pub async fn handle(mut ctx: super::Ctx, query: TeamQuery) -> Result<FromSql, Fr
                     eligible,
                     affiliation,
                     hashed_password: hash
-                }).await?
+                }).await
+                .map_err(|err| { warn!("{err:?}"); err })?
             )
         },
         TeamQuery::UpdateTeam { id, name, description, eligible, affiliation, password } => {
