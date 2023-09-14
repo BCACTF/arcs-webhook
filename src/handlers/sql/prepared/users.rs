@@ -302,7 +302,7 @@ pub async fn check_user_auth(ctx: &mut Ctx, id: Uuid, auth: CheckAuth) -> Result
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum UserIsOnTeamOutcome { UserDoesNotExist, UserNotOnTeam, UserIsOnTeam }
+pub enum UserIsOnTeamOutcome { DoesNotExist, NotOnTeam, IsOnTeam }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct PredRow { value: bool }
@@ -322,12 +322,12 @@ pub async fn user_is_on_team(ctx: &mut Ctx, id: Uuid, team_id: Uuid) -> Result<U
 
     if let Some(row) = res {
         if row.value {
-            Ok(UserIsOnTeamOutcome::UserIsOnTeam)
+            Ok(UserIsOnTeamOutcome::IsOnTeam)
         } else {
-            Ok(UserIsOnTeamOutcome::UserNotOnTeam)
+            Ok(UserIsOnTeamOutcome::NotOnTeam)
         }
     } else {
-        Ok(UserIsOnTeamOutcome::UserDoesNotExist)
+        Ok(UserIsOnTeamOutcome::DoesNotExist)
     }
 }
 

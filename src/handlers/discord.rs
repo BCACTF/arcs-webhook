@@ -17,15 +17,22 @@ use std::borrow::Cow;
 use std::concat;
 use std::fmt::Display;
 
-
+/// Contains the details for a generic message to be sent to discord.
 #[derive(Debug, Clone)]
-pub struct PayloadDetails {
+struct PayloadDetails {
+    /// The webhook URL to send the message to
     url: Cow<'static, str>,
+
+    /// The username the message should be sent with.
     username: Cow<'static, str>,
+    
+    /// The content of the message
     message: String,
 }
 
-pub struct Pings(Vec<&'static str>);
+/// A list of role IDs to send the messages to. When formatted with `Display`,
+/// it prints the formatted pings using its internal IDs.
+struct Pings(Vec<&'static str>);
 
 impl Display for Pings {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -37,6 +44,10 @@ impl Display for Pings {
 }
 
 impl ToDiscord {
+    /// Get a [`PayloadDetails`] struct containing the:
+    /// - Webhook url
+    /// - "Bot" username
+    /// - Message content
     fn get_payload_details(self) -> PayloadDetails {
         match self {
             ToDiscord::Developer(dev_message) => {

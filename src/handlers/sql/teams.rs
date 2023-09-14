@@ -38,7 +38,7 @@ pub async fn handle(mut ctx: super::Ctx, query: TeamQuery) -> Result<FromSql, Fr
         },
         TeamQuery::CreateNewTeam { name, description, eligible, affiliation, password } => {
             let display_name = shortened(&name, 13);
-            let display_affil = affiliation.as_ref().map(|affil| shortened(&affil, 13));
+            let display_affil = affiliation.as_ref().map(|affil| shortened(affil, 13));
             debug!("SQL team req classified as 'CreateNewTeam<`{display_name}` of {display_affil:?}>' req");
 
             use crate::passwords::*;
