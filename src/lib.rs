@@ -42,13 +42,14 @@
 //! 
 //! _The webhook crate functions as the main "hub" of the system, and is
 //! therefore a __SINGLE POINT OF FAILURE__. For this reason, it is written in
-//! mostly safe rust, with a focus on __NEVER PANICKING OR CRASHING__._
+//! safe rust with `#![forbid(unsafe_code)]`, with a focus on __NEVER PANICKING
+//! OR CRASHING__._
 //! 
 //! ## Some things to note:
 //! 
-//! - [payloads::incoming::Incoming] is the shape of data sent to the webhook
+//! - [`payloads::incoming::Incoming`] is the shape of data sent to the webhook
 //!   server.
-//! - [payloads::outgoing::Outgoing] is the shape of data returned from the
+//! - [`payloads::outgoing::Outgoing`] is the shape of data returned from the
 //!   webhook server.
 //! - The command `cargo run --bin generate_meta` will export the JSON schema
 //!   for an incoming payload in `./meta/incoming.schema.json`.
@@ -59,6 +60,7 @@
     clippy::unwrap_used,
     clippy::expect_used,
 )]
+#![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
 pub mod payloads;
@@ -66,7 +68,6 @@ pub mod handlers;
 
 pub mod env;
 mod auth;
-mod sql;
 
 pub use auth::{ AuthHeader, Token };
 pub use sql::start_db_connection;
@@ -217,11 +218,10 @@ mod sql {
             .await
     }
 
-    pub async fn start_db_connection() {
-        drop(connection().await);
+    pub async fn start_db_connection() -> Result<(), sqlx::Error> {
+        connection().await.map(|_| ())
     }
 }
-pub use sql::start_db_connection;
 
 mod passwords {
     use argon2::{ Config, ThreadMode, Variant, Version };
