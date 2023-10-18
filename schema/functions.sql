@@ -127,3 +127,14 @@ CREATE OR REPLACE FUNCTION try_signin_oauth(user_id uuid, sub text, provider var
         ELSE 'authenticated'::public.try_signin_ret
     END result;
 $$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION get_top_n_teams(n integer) RETURNS SETOF uuid AS $$
+    SELECT id FROM teams ORDER BY score DESC, last_solve ASC, inserted_at ASC LIMIT n;
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION get_team_score_at(team_id uuid, at_time timestamp(0) without time zone) RETURNS integer AS $$
+    SELECT COALESCE(SUM(chall.points), 0) AS result
+    FROM solve_successes as solve
+    INNER JOIN challenges as chall ON solve.challenge_id = chall.id
+    WHERE solve.team_id = $1 AND solve.solved_at < at_time;
+$$ LANGUAGE SQL;

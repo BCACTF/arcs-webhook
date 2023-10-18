@@ -2,6 +2,7 @@ use {
     serde::{Deserialize, Serialize},
     schemars::JsonSchema,
 };
+use chrono::NaiveDateTime;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -33,5 +34,15 @@ pub enum TeamQuery {
         id: Uuid,
     },
     #[serde(rename = "get_all")]
-    GetAllTeams
+    GetAllTeams,
+    
+    #[serde(rename = "get_top")]
+    GetTopTeams {
+        limit: u32,
+    },
+    #[serde(rename = "get_top_history")]
+    GetTopTeamsScoreHistory {
+        limit: u32,
+        start_time: NaiveDateTime,
+    },
 }

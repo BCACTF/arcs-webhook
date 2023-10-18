@@ -146,8 +146,8 @@ mod http_client {
 
     lazy_static! {
         // FIXME: Think of a way to not use `unwrap`.
-        #[warn(clippy::unwrap_used)]
         pub static ref DEFAULT: Client = {
+            #[warn(clippy::unwrap_used)]
             Client::builder()
                 .user_agent("ARCS webhook requests")
                 .build()
@@ -206,6 +206,7 @@ mod sql {
                     .min_connections(4)
                     .max_connections(8);
 
+                #[warn(clippy::unwrap_used)]
                 options
                     .connect_with(connection_options)
                     .await

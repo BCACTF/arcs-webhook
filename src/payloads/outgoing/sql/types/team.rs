@@ -32,3 +32,12 @@ pub struct Team {
     pub eligible: bool,
     pub affiliation: Option<String>,
 }
+
+
+
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct ScoreEntry {
+    pub team_id: Uuid,
+    pub score: i32,
+    pub time: chrono::NaiveDateTime,
+}

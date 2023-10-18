@@ -6,6 +6,6 @@ mod solve;
 pub use {
     chall::Chall,
     solve::Solve,
-    team::Team,
+    team::{ Team, ScoreEntry },
     user::User,
 };
