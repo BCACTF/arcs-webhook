@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use uuid::Uuid;
 
 use crate::logging::*;
 use crate::http_client::DEFAULT;
@@ -8,7 +9,7 @@ use crate::payloads::incoming::deploy::ChallIdentifier;
 
 use crate::payloads::outgoing::deploy::{FromDeploy, FromDeployErr};
 
-use super::sql::get_chall_id_by_source_folder;
+use super::sql::{ get_chall_id_by_source_folder, get_chall_source_folder_by_id };
 
 use super::{Handle, ResponseFrom};
 
@@ -19,13 +20,22 @@ impl Handle for ToDeploy {
     async fn handle(self) -> ResponseFrom<Self> {
         trace!("Handling deploy req");
 
-        let (req_type, polling_id, chall_name) = match self {
+        #[derive(Debug, serde::Serialize)]
+        struct Modifications {
+            name: Option<String>,
+            desc: Option<String>,
+            points: Option<u64>,
+            categories: Option<Vec<String>>,
+            tags: Option<Option<Vec<String>>>,
+        }
+
+        let (req_type, polling_id, chall_name, modifications) = match self {
             Self::Deploy { chall, force_wipe } => {
                 let id = if force_wipe { uuid::Uuid::new_v4() } else {
                     match &chall {
                         &ChallIdentifier::CurrDeployedId(id) => id,
                         ChallIdentifier::Folder(source_folder) => {
-                            let id = match get_chall_id_by_source_folder(&source_folder).await {
+                            let id = match get_chall_id_by_source_folder(source_folder).await {
                                 Ok(id) => id,
                                 Err(e) => {
                                     debug!("Database error: {e}");
@@ -43,11 +53,32 @@ impl Handle for ToDeploy {
                     match chall {
                         ChallIdentifier::CurrDeployedId(id) => id.to_string(),
                         ChallIdentifier::Folder(s) => s,
-                    }
+                    },
+                    None
                 )
             },
-            Self::Poll { id } => ("poll", id, "".to_string()),
-            Self::Remove { chall } => ("delete", chall, "".to_string())
+            Self::Poll { id } => ("poll", id, "".to_string(), None),
+            Self::Remove { chall } => ("delete", chall, "".to_string(), None),
+            Self::ModifyMeta {
+                id,
+                name, desc, points, categories, tags,
+            } => {
+                let chall_source_folder = match get_chall_source_folder_by_id(id).await {
+                    Ok(Some(id)) => id,
+                    Ok(None) => return Err(FromDeployErr::DbError),
+                    Err(e) => {
+                        debug!("Database error: {e}");
+                        return Err(FromDeployErr::DbError);
+                    }
+                };
+
+                (
+                    "modify_meta",
+                    id,
+                    chall_source_folder,
+                    Some(Modifications { name, desc, points, categories, tags }),
+                )
+            },
         };
 
 
@@ -56,6 +87,7 @@ impl Handle for ToDeploy {
             "__type": req_type,
             "deploy_identifier": polling_id,
             "chall_name": chall_name,
+            "modifications": modifications,
         });
 
         let response = DEFAULT

@@ -21,4 +21,12 @@ pub enum ToDeploy {
     },
     Poll { id: Uuid },
     Remove { chall: Uuid },
+    ModifyMeta {
+        id: Uuid,
+        name: Option<String>,
+        desc: Option<String>,
+        points: Option<u64>,
+        categories: Option<Vec<String>>,
+        tags: Option<Option<Vec<String>>>,
+    },
 }

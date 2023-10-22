@@ -16,7 +16,7 @@ use super::{Handle, ResponseFrom};
 use sqlx::{ pool::PoolConnection, Postgres };
 type Ctx = PoolConnection<Postgres>;
 
-pub use challs::get_chall_id_by_source_folder;
+pub use challs::{ get_chall_id_by_source_folder, get_chall_source_folder_by_id };
 
 #[async_trait]
 impl Handle for ToSql {
