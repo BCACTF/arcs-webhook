@@ -26,5 +26,9 @@ pub enum SolveQuery {
         user_auth: super::Auth,
         flag_guess: String,
     },
-    
+
+    #[serde(rename = "clear_all_chall")]
+    ClearAllSolvesForChallenge {
+        id: Uuid,
+    },
 }

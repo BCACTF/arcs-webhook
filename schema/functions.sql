@@ -73,7 +73,7 @@ CREATE OR REPLACE FUNCTION update_all_team_scores() RETURNS void AS $$
     UPDATE teams SET score = get_score_team(id);
 $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION update_all_chall_solves() RETURNS void AS $$
-    UPDATE teams SET score = get_score_team(id);
+    UPDATE challenges SET solve_count = get_solves_chall(id);
 $$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION update_db_scores_solves() RETURNS void AS $$

@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use uuid::Uuid;
 
 use crate::logging::*;
 use crate::http_client::DEFAULT;
@@ -27,6 +26,7 @@ impl Handle for ToDeploy {
             points: Option<u64>,
             categories: Option<Vec<String>>,
             tags: Option<Option<Vec<String>>>,
+            visible: Option<bool>,
         }
 
         let (req_type, polling_id, chall_name, modifications) = match self {
@@ -61,7 +61,7 @@ impl Handle for ToDeploy {
             Self::Remove { chall } => ("delete", chall, "".to_string(), None),
             Self::ModifyMeta {
                 id,
-                name, desc, points, categories, tags,
+                name, desc, points, categories, tags, visible
             } => {
                 let chall_source_folder = match get_chall_source_folder_by_id(id).await {
                     Ok(Some(id)) => id,
@@ -76,7 +76,7 @@ impl Handle for ToDeploy {
                     "modify_meta",
                     id,
                     chall_source_folder,
-                    Some(Modifications { name, desc, points, categories, tags }),
+                    Some(Modifications { name, desc, points, categories, tags, visible }),
                 )
             },
         };

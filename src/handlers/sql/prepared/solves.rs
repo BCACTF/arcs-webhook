@@ -1,4 +1,4 @@
-use sqlx::query_as;
+use sqlx::{ query_as, query, Connection };
 use uuid::Uuid;
 
 use super::Ctx;
@@ -154,4 +154,32 @@ pub async fn first_blood_details(ctx: &mut Ctx, solve_id: Uuid) -> Result<Option
         solve_id,
     );
     query.fetch_optional(ctx).await
+}
+
+pub async fn clear_all_solves_for_challenge(ctx: &mut Ctx, chall_id: Uuid) -> Result<(), sqlx::Error> {
+    let set_incorrect_query = query!(
+        r#"
+            UPDATE solve_attempts AS sol_att SET correct = false WHERE sol_att.challenge_id = $1;
+        "#,
+        chall_id,
+    );
+    let clear_query = query!(
+        r#"
+            DELETE FROM solve_successes as sol_succ WHERE sol_succ.challenge_id = $1;
+        "#,
+        chall_id,
+    );
+    let update_query = query!(
+        r#"
+            SELECT update_db_scores_solves();
+        "#,
+    );
+
+    ctx.transaction(|conn| Box::pin(async move {
+        set_incorrect_query.execute(&mut *conn).await?;
+        clear_query.execute(&mut *conn).await?;
+        update_query.execute(&mut *conn).await
+    })).await?;
+
+    Ok(())
 }

@@ -28,5 +28,6 @@ pub enum ToDeploy {
         points: Option<u64>,
         categories: Option<Vec<String>>,
         tags: Option<Option<Vec<String>>>,
+        visible: Option<bool>,
     },
 }
