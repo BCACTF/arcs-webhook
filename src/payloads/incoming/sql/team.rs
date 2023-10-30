@@ -5,8 +5,10 @@ use {
 use chrono::NaiveDateTime;
 use uuid::Uuid;
 
+use super::Auth;
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "query_name", rename_all = "snake_case")]
+#[serde(tag = "__query_name", rename_all = "snake_case", content = "params")]
 pub enum TeamQuery {
     #[serde(rename = "available")]
     CheckTeamnameAvailability {
@@ -19,6 +21,9 @@ pub enum TeamQuery {
         eligible: bool,
         affiliation: Option<String>,
         password: String,
+
+        initial_user: Uuid,
+        user_auth: Auth,
     },
     #[serde(rename = "update")]
     UpdateTeam {

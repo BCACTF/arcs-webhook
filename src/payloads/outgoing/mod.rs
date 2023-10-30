@@ -20,14 +20,13 @@ use super::incoming::{
     ToDeploy,
 };
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
 pub struct Outgoing {
     pub (crate) depl: Option<ResponseFrom<ToDeploy>>,
     pub (crate) disc: Option<ResponseFrom<ToDiscord>>,
     pub (crate) fron: Option<ResponseFrom<ToFrontend>>,
     pub (crate) sqll: Option<ResponseFrom<ToSql>>,
 }
-
 
 struct Details {
     code: u16,

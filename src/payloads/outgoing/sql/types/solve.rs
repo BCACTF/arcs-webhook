@@ -1,7 +1,7 @@
 use serde::Serialize;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
 pub struct SerializableSolve {
     pub id: Uuid,
     
@@ -34,4 +34,14 @@ pub struct Solve {
     pub correct: bool,
     pub counted: bool,
     pub time: chrono::NaiveDateTime,
+}
+
+
+impl schemars::JsonSchema for Solve {
+    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+        SerializableSolve::json_schema(gen)
+    }
+    fn schema_name() -> String {
+        "Solve".to_string()
+    }
 }

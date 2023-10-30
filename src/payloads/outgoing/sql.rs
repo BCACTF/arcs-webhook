@@ -8,7 +8,7 @@ use uuid::Uuid;
 use crate::handlers::OutgoingErr;
 
 // TODO: Fix this
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
 #[serde(tag = "__type", rename_all = "snake_case", content = "data")]
 pub enum FromSql {
     Chall(Chall),
@@ -28,7 +28,7 @@ pub enum FromSql {
     AuthStatus(bool),
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
 pub enum FromSqlErr {
     OtherServerError(Cow<'static, str>),
     DatabaseError,

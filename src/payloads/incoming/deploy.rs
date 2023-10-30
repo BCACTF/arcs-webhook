@@ -13,7 +13,7 @@ pub enum ChallIdentifier {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "__type", rename_all = "snake_case")]
+#[serde(tag = "__type", rename_all = "snake_case", content = "data")]
 pub enum ToDeploy {
     Deploy {
         chall: ChallIdentifier,

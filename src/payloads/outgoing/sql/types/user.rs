@@ -3,7 +3,7 @@ use uuid::Uuid;
 use crate::sql::CiText;
 
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
 pub struct SerializableUser {
     pub id: Uuid,
     pub email: CiText,
@@ -45,4 +45,13 @@ pub struct User {
     
     pub eligible: bool,
     pub admin: bool,
+}
+
+impl schemars::JsonSchema for User {
+    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+        SerializableUser::json_schema(gen)
+    }
+    fn schema_name() -> String {
+        "User".to_string()
+    }
 }

@@ -65,12 +65,17 @@ pub async fn handle(mut ctx: super::Ctx, query: TeamQuery) -> Result<FromSql, Fr
             let team = get_team_by_name(&mut ctx, &name).await?;
             FromSql::Availability(team.is_none())
         },
-        TeamQuery::CreateNewTeam { name, description, eligible, affiliation, password } => {
+        TeamQuery::CreateNewTeam {
+            name, description, eligible, affiliation,
+            password,
+            initial_user, user_auth,
+        } => {
             let display_name = shortened(&name, 13);
             let display_affil = affiliation.as_ref().map(|affil| shortened(affil, 13));
             debug!("SQL team req classified as 'CreateNewTeam<`{display_name}` of {display_affil:?}>' req");
 
             use crate::passwords::*;
+
 
             let Ok(salt) = salt() else {
                 return Err(FromSqlErr::OtherServerError("Failed to hash team password.".into()))
@@ -82,16 +87,39 @@ pub async fn handle(mut ctx: super::Ctx, query: TeamQuery) -> Result<FromSql, Fr
             let team_already_exists = get_team_by_name(&mut ctx, &name).await?.is_some();
             if team_already_exists { return Err(FromSqlErr::NameIsTaken(name)); }
 
-            FromSql::Team(
-                create_team(&mut ctx, NewTeamInput {
-                    name,
-                    description,
-                    eligible,
-                    affiliation,
-                    hashed_password: hash
-                }).await
-                .map_err(|err| { warn!("{err:?}"); err })?
-            )
+            let Some(user) = super::prepared::users::get_user(&mut ctx, initial_user).await? else {
+                warn!("Initial user {initial_user} does not exist, tried to create a team");
+                return Err(FromSqlErr::DoesNotExist(initial_user));
+            };
+            if user.team_id.is_some() {
+                warn!("Initial user {initial_user} already on a team, tried to create a team");
+                return Err(FromSqlErr::OtherServerError(format!("{} already on team", user.id).into()));
+            }
+
+            if !super::prepared::users::check_user_auth(&mut ctx, initial_user, user_auth).await? {
+                warn!("Initial user {initial_user} failed to auth");
+                return Err(FromSqlErr::Auth);
+            }
+
+
+            let team = create_team(&mut ctx, NewTeamInput {
+                name,
+                description,
+                eligible,
+                affiliation,
+                hashed_password: hash
+            }).await?;
+
+
+            super::prepared::users::set_user_team(&mut ctx, initial_user, team.id).await?;
+
+
+            let Some(team) = get_team(&mut ctx, team.id).await? else {
+                error!("Couldn't find team {:?} ({}) which was just created", team.name, team.id);
+                return Err(FromSqlErr::OtherServerError("Failed to create team".into()))
+            };
+
+            FromSql::Team(team)
         },
         TeamQuery::UpdateTeam { id, name, description, eligible, affiliation, password } => {
             debug!("SQL team req classified as 'UpdateTeam<{id}>' req");

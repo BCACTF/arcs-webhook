@@ -18,7 +18,7 @@ pub enum SyncType {
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, JsonSchema)]
-#[serde(tag = "__type", rename_all = "snake_case")]
+#[serde(tag = "__type", rename_all = "snake_case", content = "data")]
 pub enum ToFrontend {
     Sync(SyncType),
 }

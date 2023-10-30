@@ -3,14 +3,14 @@ use serde::Serialize;
 
 use crate::{handlers::OutgoingErr, payloads::incoming::frontend::SyncType};
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(tag = "__type", rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+#[serde(tag = "__type", rename_all = "snake_case", content = "details")]
 pub enum FromFrontend {
     Synced(SyncType),
 }
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(tag = "__type", rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+#[serde(tag = "__type", rename_all = "snake_case", content = "info")]
 pub enum FromFrontendErr {
     FailedToSync(SyncType),
     WebhookServerError(String),

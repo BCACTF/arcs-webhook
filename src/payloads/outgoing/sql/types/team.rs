@@ -3,7 +3,7 @@ use serde::Serialize;
 use uuid::Uuid;
 
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
 pub struct SerializableTeam {
     pub id: Uuid,
     pub name: CiText,
@@ -34,8 +34,17 @@ pub struct Team {
 }
 
 
+impl schemars::JsonSchema for Team {
+    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+        SerializableTeam::json_schema(gen)
+    }
+    fn schema_name() -> String {
+        "Team".to_string()
+    }
+}
 
-#[derive(Debug, Clone, Copy, Serialize)]
+
+#[derive(Debug, Clone, Copy, Serialize, schemars::JsonSchema)]
 pub struct ScoreEntry {
     pub team_id: Uuid,
     pub score: i32,
