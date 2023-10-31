@@ -7,6 +7,7 @@ use std::collections::HashMap;
 
 use actix_web::HttpResponse;
 use reqwest::StatusCode;
+use schemars::schema::SchemaObject;
 use serde::Serialize;
 use serde_json::json;
 
@@ -20,7 +21,7 @@ use super::incoming::{
     ToDeploy,
 };
 
-#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+#[derive(Debug, Clone)]
 pub struct Outgoing {
     pub (crate) depl: Option<ResponseFrom<ToDeploy>>,
     pub (crate) disc: Option<ResponseFrom<ToDiscord>>,
@@ -144,6 +145,56 @@ impl Outgoing {
             HttpResponse
                 ::build(code)
                 .json(json_map)
+        }
+    }
+}
+
+
+mod json_schema {
+    use super::*;
+
+    macro_rules! result_enum {
+        (enum $name:ident { Ok($success_type:path), Err($err_type:path) }) => {
+            #[derive(serde::Serialize, schemars::JsonSchema)]
+            #[serde(tag = "ok", content = "data")]
+            #[allow(unused, clippy::large_enum_variant)]
+            enum $name {
+                #[serde(rename = "success")]
+                Ok($success_type),
+                #[serde(rename = "err")]
+                Err($err_type),
+            }
+        };
+    }
+
+    result_enum!(enum DeployResult { Ok(deploy::FromDeploy), Err(deploy::FromDeployErr) });
+    result_enum!(enum DiscordResult { Ok(discord::FromDiscord), Err(discord::FromDiscordErr) });
+    result_enum!(enum FrontendResult { Ok(frontend::FromFrontend), Err(frontend::FromFrontendErr) });
+    result_enum!(enum SqlResult { Ok(sql::FromSql), Err(sql::FromSqlErr) });
+    
+    #[derive(schemars::JsonSchema)]
+    #[allow(unused)]
+    pub struct OutgoingSchemaShape {
+        deploy: Option<DeployResult>,
+        discord: Option<DiscordResult>,
+        frontend: Option<FrontendResult>,
+        sql: Option<SqlResult>,
+    }
+    
+    impl schemars::JsonSchema for Outgoing {
+        fn schema_name() -> String {
+            "Outgoing".to_owned()
+        }
+    
+        fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+            let schema = OutgoingSchemaShape::json_schema(gen);
+            let mut schema = SchemaObject::from(schema);
+    
+            let mut metadata = schema.metadata().clone();
+            metadata.title = Some("Outgoing".to_owned());
+            schema.metadata = Some(Box::new(metadata));
+    
+            schema.into()
         }
     }
 }
