@@ -31,19 +31,43 @@ impl Handle for ToSql {
         let return_payload = match self {
             ToSql::Chall(chall_query) => {
                 debug!("SQL req classified as chall req");
-                challs::handle(sql_connection, chall_query).await?
+                match challs::handle(sql_connection, chall_query).await {
+                    Ok(return_payload) => return_payload,
+                    Err(e) => {
+                        debug!("Challs SQL error: {e:?}");
+                        return Err(e);
+                    }
+                }
             },
             ToSql::Team(team_query) => {
                 debug!("SQL req classified as team req");
-                teams::handle(sql_connection, team_query).await?
+                match teams::handle(sql_connection, team_query).await {
+                    Ok(return_payload) => return_payload,
+                    Err(e) => {
+                        debug!("Teams SQL error: {e:?}");
+                        return Err(e);
+                    }
+                }
             },
             ToSql::User(user_query) => {
                 debug!("SQL req classified as user req");
-                users::handle(sql_connection, user_query).await?
+                match users::handle(sql_connection, user_query).await {
+                    Ok(return_payload) => return_payload,
+                    Err(e) => {
+                        debug!("Users SQL error: {e:?}");
+                        return Err(e);
+                    }
+                }
             },
             ToSql::Solve(solve_query) => {
                 debug!("SQL req classified as solve req");
-                solves::handle(sql_connection, solve_query).await?
+                match solves::handle(sql_connection, solve_query).await {
+                    Ok(return_payload) => return_payload,
+                    Err(e) => {
+                        debug!("Solve SQL error: {e:?}");
+                        return Err(e);
+                    }
+                }
             },
         };
         Ok(return_payload)
