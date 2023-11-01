@@ -27,12 +27,15 @@ pub struct DeploymentStatus {
     pub (crate) status_time: Duration,
     pub (crate) chall_name: Option<String>,
     pub (crate) poll_id: Uuid,
+
+    pub (crate) err_msg: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
-#[serde(untagged)]
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(tag = "__type", rename_all = "snake_case", content = "data")]
 pub enum FromDeploy {
     Status(DeploymentStatus),
+    ChallNameList(Vec<String>),
 }
 
 #[derive(Debug, Clone, Serialize, schemars::JsonSchema)]

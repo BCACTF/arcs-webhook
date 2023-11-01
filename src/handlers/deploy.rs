@@ -79,6 +79,7 @@ impl Handle for ToDeploy {
                     Some(Modifications { name, desc, points, categories, tags, visible }),
                 )
             },
+            Self::ListChalls => ("list_challs", uuid::Uuid::new_v4(), "".to_string(), None),
         };
 
 
@@ -109,7 +110,7 @@ impl Handle for ToDeploy {
                 };
 
                 info!("Deploy req successful");
-                Ok(FromDeploy::Status(data))
+                Ok(data)
             } else {
                 warn!("Deploy req failed");
                 debug!("Response data: {response:#?}");

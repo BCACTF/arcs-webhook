@@ -30,4 +30,5 @@ pub enum ToDeploy {
         tags: Option<Option<Vec<String>>>,
         visible: Option<bool>,
     },
+    ListChalls,
 }

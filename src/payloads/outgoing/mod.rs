@@ -3,13 +3,10 @@ pub mod deploy;
 pub mod sql;
 pub mod frontend;
 
-use std::collections::HashMap;
-
 use actix_web::HttpResponse;
 use reqwest::StatusCode;
 use schemars::schema::SchemaObject;
 use serde::Serialize;
-use serde_json::json;
 
 use crate::handlers::{ResponseFrom, OutgoingErr};
 use crate::logging::*;
@@ -29,103 +26,52 @@ pub struct Outgoing {
     pub (crate) sqll: Option<ResponseFrom<ToSql>>,
 }
 
-struct Details {
-    code: u16,
-    json: serde_json::Value,
-}
 impl Outgoing {
-    fn get_details<Ok: Serialize, Err: OutgoingErr>(opt_res: Option<Result<Ok, Err>>) -> (bool, Option<Details>) {
+    fn get_code<T, Err: OutgoingErr>(opt_res: &Option<Result<T, Err>>) -> Option<u16> {
         match opt_res {
             Some(Ok(res)) => {
-                let Ok(json) = serde_json::to_value(res) else {
-                    return (false, Some(Details { code: 500, json: json!("failed to send response") }));
-                };
-                let details = Details {
-                    code: StatusCode::OK.as_u16(),
-                    json
-                };
-
-                (true, Some(details))
+                Some(200)
             },
             Some(Err(e)) => {
                 let status_code = e.status_code();
-                let body = e.body();
-                let details = match body {
-                    Ok(json) => Details {
-                        code: status_code,
-                        json,
-                    },
-                    Err(err_str) => Details {
-                        code: 500,
-                        json: json!(err_str),
-                    },
-                };
-                (false, Some(details))
+                Some(status_code)
             }
-            None => (true, None),
+            None => None,
         }
-    }
-
-    fn update_codes_and_map(
-        name: &'static str,
-        (ok, data): (bool, Option<Details>),
-        map: &mut HashMap<&'static str, serde_json::Value>,
-        bad_code_list: &mut Vec<u16>,
-    ) -> Result<(), HttpResponse> {        
-        if !ok {
-
-            let Some(data) = data else {
-                error!("The combination of error and no details should never occur!");
-                info!("The error occurred in the {name} part of the response");
-                return Err(HttpResponse::InternalServerError().body("Major server issue encountered. See logs for more info."));
-            };
-            
-            info!("The {name} part of this response is a failure (code {})", data.code);
-
-            bad_code_list.push(data.code);
-            map.insert(name, data.json);
-        } else if let Some(data) = data {
-            map.insert(name, data.json);
-        }
-        Ok(())
     }
 
     pub fn response(self) -> HttpResponse {
         let mut bad_status_code_list = vec![];
-        let mut json_map = HashMap::new();
         
 
-        let depl = Self::update_codes_and_map(
-            "deploy", Self::get_details(self.depl),
-            &mut json_map, &mut bad_status_code_list,
-        );
-        let disc = Self::update_codes_and_map(
-            "discord", Self::get_details(self.disc),
-            &mut json_map, &mut bad_status_code_list,
-        );
-        let fron = Self::update_codes_and_map(
-            "frontend", Self::get_details(self.fron),
-            &mut json_map, &mut bad_status_code_list,
-        );
-        let sqll = Self::update_codes_and_map(
-            "sql", Self::get_details(self.sqll),
-            &mut json_map, &mut bad_status_code_list,
-        );
-        match (depl, disc, fron, sqll) {
-            (Ok(()), Ok(()), Ok(()), Ok(())) => (),
-            | (Err(e), _, _, _) 
-            | (_, Err(e), _, _) 
-            | (_, _, Err(e), _) 
-            | (_, _, _, Err(e)) => return e,
-        }
+        if let Some(deploy_code) = Self::get_code(&self.depl) {
+            if !(200..300).contains(&deploy_code) {
+                bad_status_code_list.push(deploy_code);
+            }
+        };
+        if let Some(discord_code) = Self::get_code(&self.disc) {
+            if !(200..300).contains(&discord_code) {
+                bad_status_code_list.push(discord_code);
+            }
+        };
+        if let Some(frontend_code) = Self::get_code(&self.fron) {
+            if !(200..300).contains(&frontend_code) {
+                bad_status_code_list.push(frontend_code);
+            }
+        };
+        if let Some(sql_code) = Self::get_code(&self.sqll) {
+            if !(200..300).contains(&sql_code) {
+                bad_status_code_list.push(sql_code);
+            }
+        };
 
         if bad_status_code_list.is_empty() {
             info!("Response had no errors");
             HttpResponse
                 ::build(StatusCode::OK)
-                .json(json_map)
+                .json(json_schema::OutgoingSchemaShape::from(self))
         } else {
-            info!("Response had errors in {:?}", json_map.keys());
+            info!("Response had errors");
 
             let (client, server) = bad_status_code_list
                 .iter()
@@ -144,7 +90,7 @@ impl Outgoing {
 
             HttpResponse
                 ::build(code)
-                .json(json_map)
+                .json(json_schema::OutgoingSchemaShape::from(self))
         }
     }
 }
@@ -158,7 +104,7 @@ mod json_schema {
             #[derive(serde::Serialize, schemars::JsonSchema)]
             #[serde(tag = "ok", content = "data")]
             #[allow(unused, clippy::large_enum_variant)]
-            enum $name {
+            pub(super) enum $name {
                 #[serde(rename = "success")]
                 Ok($success_type),
                 #[serde(rename = "err")]
@@ -172,13 +118,13 @@ mod json_schema {
     result_enum!(enum FrontendResult { Ok(frontend::FromFrontend), Err(frontend::FromFrontendErr) });
     result_enum!(enum SqlResult { Ok(sql::FromSql), Err(sql::FromSqlErr) });
     
-    #[derive(schemars::JsonSchema)]
+    #[derive(Serialize, schemars::JsonSchema)]
     #[allow(unused)]
     pub struct OutgoingSchemaShape {
-        deploy: Option<DeployResult>,
-        discord: Option<DiscordResult>,
-        frontend: Option<FrontendResult>,
-        sql: Option<SqlResult>,
+        pub(super) deploy: Option<DeployResult>,
+        pub(super) discord: Option<DiscordResult>,
+        pub(super) frontend: Option<FrontendResult>,
+        pub(super) sql: Option<SqlResult>,
     }
     
     impl schemars::JsonSchema for Outgoing {
@@ -195,6 +141,30 @@ mod json_schema {
             schema.metadata = Some(Box::new(metadata));
     
             schema.into()
+        }
+    }
+
+
+    impl From<Outgoing> for OutgoingSchemaShape {
+        fn from(out: Outgoing) -> Self {
+            Self {
+                deploy: out.depl.map(|res| match res {
+                    Ok(ok) => DeployResult::Ok(ok),
+                    Err(err) => DeployResult::Err(err),
+                }),
+                discord: out.disc.map(|res| match res {
+                    Ok(ok) => DiscordResult::Ok(ok),
+                    Err(err) => DiscordResult::Err(err),
+                }),
+                frontend: out.fron.map(|res| match res {
+                    Ok(ok) => FrontendResult::Ok(ok),
+                    Err(err) => FrontendResult::Err(err),
+                }),
+                sql: out.sqll.map(|res| match res {
+                    Ok(ok) => SqlResult::Ok(ok),
+                    Err(err) => SqlResult::Err(err),
+                }),
+            }
         }
     }
 }
