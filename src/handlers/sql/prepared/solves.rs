@@ -1,4 +1,4 @@
-use sqlx::query_as;
+use sqlx::{ query_as, query, Connection };
 use uuid::Uuid;
 
 use super::Ctx;
@@ -154,4 +154,22 @@ pub async fn first_blood_details(ctx: &mut Ctx, solve_id: Uuid) -> Result<Option
         solve_id,
     );
     query.fetch_optional(ctx).await
+}
+
+pub async fn clear_all_solves_for_challenge(ctx: &mut Ctx, chall_id: Uuid) -> Result<Vec<Uuid>, sqlx::Error> {
+    let query = query!(
+        r#"
+            SELECT delete_solves_for_challenge($1) as "id!";
+        "#,
+        chall_id,
+    );
+
+    let deleted = query
+        .fetch_all(ctx)
+        .await?
+        .into_iter()
+        .map(|record| record.id)
+        .collect();
+
+    Ok(deleted)
 }

@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 use crate::handlers::OutgoingErr;
 
 // TODO: Figure this out
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
 #[serde(into = "&'static str")]
 pub struct FromDiscord;
 
@@ -11,7 +11,7 @@ impl From<FromDiscord> for &'static str {
     fn from(_: FromDiscord) -> Self { "success" }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct FromDiscordErr {
     pub (crate) status_code: u16,
     pub (crate) status_message: String,

@@ -21,7 +21,7 @@ pub struct Link {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "query_name", rename_all = "snake_case")]
+#[serde(tag = "__query_name", rename_all = "snake_case", content = "params")]
 pub enum ChallQuery {
     #[serde(rename = "create")]
     CreateChallenge {

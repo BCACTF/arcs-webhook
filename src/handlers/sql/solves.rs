@@ -90,7 +90,13 @@ pub async fn handle(mut ctx: super::Ctx, query: SolveQuery) -> Result<FromSql, F
 
             FromSql::Solve(solve)
         },
-
+        SolveQuery::ClearAllSolvesForChallenge {
+            id
+        } => {
+            debug!("SQL solve req classified as 'ClearAllSolvesForChallenge' req");
+            queries::clear_all_solves_for_challenge(&mut ctx, id).await?;
+            FromSql::SolveArr(vec![])
+        },
     };
     Ok(success_res)
 }

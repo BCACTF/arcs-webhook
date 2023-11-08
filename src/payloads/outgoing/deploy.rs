@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::handlers::OutgoingErr;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 
 #[serde(rename_all = "snake_case")]
 pub enum Status {
@@ -21,21 +21,24 @@ pub enum Status {
     Unknown,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct DeploymentStatus {
     pub (crate) status: Status,
     pub (crate) status_time: Duration,
     pub (crate) chall_name: Option<String>,
     pub (crate) poll_id: Uuid,
+
+    pub (crate) err_msg: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(tag = "__type", rename_all = "snake_case", content = "data")]
 pub enum FromDeploy {
     Status(DeploymentStatus),
+    ChallNameList(Vec<String>),
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
 pub enum FromDeployErr {
     BadSend,
     BadResponse,

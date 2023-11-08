@@ -13,7 +13,7 @@ pub enum ChallIdentifier {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "__type", rename_all = "snake_case")]
+#[serde(tag = "__type", rename_all = "snake_case", content = "data")]
 pub enum ToDeploy {
     Deploy {
         chall: ChallIdentifier,
@@ -21,4 +21,14 @@ pub enum ToDeploy {
     },
     Poll { id: Uuid },
     Remove { chall: Uuid },
+    ModifyMeta {
+        id: Uuid,
+        name: Option<String>,
+        desc: Option<String>,
+        points: Option<u64>,
+        categories: Option<Vec<String>>,
+        tags: Option<Option<Vec<String>>>,
+        visible: Option<bool>,
+    },
+    ListChalls,
 }

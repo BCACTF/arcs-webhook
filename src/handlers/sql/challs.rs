@@ -3,6 +3,7 @@ use crate::payloads::*;
 
 use incoming::sql::ChallQuery;
 use outgoing::sql::{FromSql, FromSqlErr};
+use uuid::Uuid;
 
 use super::prepared::challenges as queries;
 use super::prepared::challenges::get_chall_by_source_folder;
@@ -81,4 +82,21 @@ pub async fn get_chall_id_by_source_folder(source_folder: &str) -> Result<Option
     };
 
     Ok(id.map(|c| c.id))
+}
+
+pub async fn get_chall_source_folder_by_id(id: Uuid) -> Result<Option<String>, std::borrow::Cow<'static, str>> {
+    let Ok(mut sql_connection) = crate::sql::connection().await else {
+        return Err("Failed to get db connection".into())
+    };
+
+    let source_folder = match get_chall(&mut sql_connection, id).await {
+        Ok(Some(chall)) => chall.source_folder,
+        Ok(None) => return Ok(None),
+        Err(e) => {
+            debug!("Db error: {e}");
+            return Err("Failed to check for challenge".into())
+        },
+    };
+
+    Ok(Some(source_folder))
 }

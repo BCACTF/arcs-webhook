@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use uuid::Uuid;
 use crate::sql::CiText;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct Links {
     nc: Vec<String>,
     web: Vec<String>,
@@ -10,7 +10,7 @@ pub struct Links {
     #[serde(rename = "static")]
     static_links: Vec<String>, 
 }
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct SerializableChall {
     pub id: Uuid,
     pub name: CiText,
@@ -83,4 +83,13 @@ pub struct Chall {
     pub links_web: Vec<String>,
     pub links_admin: Vec<String>,
     pub links_static: Vec<String>,
+}
+
+impl schemars::JsonSchema for Chall {
+    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+        SerializableChall::json_schema(gen)
+    }
+    fn schema_name() -> String {
+        "Chall".to_string()
+    }
 }

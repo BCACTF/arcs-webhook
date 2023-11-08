@@ -17,7 +17,7 @@ pub use user::{ UserQuery, Auth };
 
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "__type", rename_all = "snake_case")]
+#[serde(tag = "__type", rename_all = "snake_case", content = "details")]
 pub enum ToSql {
     User(UserQuery),
     Team(TeamQuery),

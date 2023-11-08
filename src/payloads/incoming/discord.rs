@@ -33,14 +33,14 @@ pub struct DeveloperDiscordMessage {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "__participant_type", rename_all = "snake_case")]
+#[serde(tag = "__participant_message_type", rename_all = "snake_case", content = "metadata")]
 pub enum ParticipantMessage {
     FirstBlood { chall_name: String, team: String, user: String },
     Alert { message: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "__type", rename_all = "snake_case")]
+#[serde(tag = "__type", rename_all = "snake_case", content = "details")]
 pub enum ToDiscord {
     Developer(DeveloperDiscordMessage),
     Participant(ParticipantMessage),

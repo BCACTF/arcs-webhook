@@ -5,7 +5,7 @@ use {
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "__type", rename_all = "snake_case")]
+#[serde(tag = "__type", rename_all = "snake_case", content = "params")]
 pub enum Auth {
     #[serde(alias = "oauth")]
     OAuth {
@@ -19,7 +19,7 @@ pub enum Auth {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "query_name", rename_all = "snake_case")]
+#[serde(tag = "__query_name", rename_all = "snake_case", content = "params")]
 pub enum UserQuery {
     #[serde(rename = "available")]
     CheckUsernameAvailability {

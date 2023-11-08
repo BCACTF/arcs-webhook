@@ -24,6 +24,22 @@ CREATE TABLE solve_successes (
     solved_at timestamp(0) without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE deleted_solves (
+    id uuid PRIMARY KEY NOT NULL,
+
+    flag_guess varchar(255) NOT NULL,
+    correct boolean NOT NULL,
+
+    user_id uuid NOT NULL,
+    challenge_id uuid NOT NULL,
+    team_id uuid NOT NULL,
+
+    inserted_at timestamp(0) without time zone NOT NULL,
+    updated_at timestamp(0) without time zone NOT NULL,
+    deleted_at timestamp(0) without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
 CREATE TABLE auth_name_pass (
     id uuid PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
     user_id uuid NOT NULL,

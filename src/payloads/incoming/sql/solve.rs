@@ -5,7 +5,7 @@ use {
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "query_name", rename_all = "snake_case")]
+#[serde(tag = "__query_name", rename_all = "snake_case", content = "params")]
 pub enum SolveQuery {
     #[serde(rename = "get_all")]
     GetAllSolves,
@@ -26,5 +26,9 @@ pub enum SolveQuery {
         user_auth: super::Auth,
         flag_guess: String,
     },
-    
+
+    #[serde(rename = "clear_all_chall")]
+    ClearAllSolvesForChallenge {
+        id: Uuid,
+    },
 }

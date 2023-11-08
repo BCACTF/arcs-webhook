@@ -2,10 +2,13 @@ use {
     serde::{Deserialize, Serialize},
     schemars::JsonSchema,
 };
+use chrono::NaiveDateTime;
 use uuid::Uuid;
 
+use super::Auth;
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(tag = "query_name", rename_all = "snake_case")]
+#[serde(tag = "__query_name", rename_all = "snake_case", content = "params")]
 pub enum TeamQuery {
     #[serde(rename = "available")]
     CheckTeamnameAvailability {
@@ -18,6 +21,9 @@ pub enum TeamQuery {
         eligible: bool,
         affiliation: Option<String>,
         password: String,
+
+        initial_user: Uuid,
+        user_auth: Auth,
     },
     #[serde(rename = "update")]
     UpdateTeam {
@@ -33,5 +39,15 @@ pub enum TeamQuery {
         id: Uuid,
     },
     #[serde(rename = "get_all")]
-    GetAllTeams
+    GetAllTeams,
+    
+    #[serde(rename = "get_top")]
+    GetTopTeams {
+        limit: u32,
+    },
+    #[serde(rename = "get_top_history")]
+    GetTopTeamsScoreHistory {
+        limit: u32,
+        start_time: NaiveDateTime,
+    },
 }
