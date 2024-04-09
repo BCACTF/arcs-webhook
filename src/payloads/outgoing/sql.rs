@@ -40,7 +40,8 @@ pub enum FromSqlErr {
 }
 
 impl From<sqlx::Error> for FromSqlErr {
-    fn from(_: sqlx::Error) -> Self {
+    fn from(e: sqlx::Error) -> Self {
+        crate::logging::trace!("SQLX error: {e:?}");
         Self::DatabaseError
     }
 }

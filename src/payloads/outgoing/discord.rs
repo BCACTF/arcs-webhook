@@ -3,12 +3,22 @@ use serde::{Serialize, Deserialize};
 use crate::handlers::OutgoingErr;
 
 // TODO: Figure this out
-#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(into = "&'static str")]
 pub struct FromDiscord;
 
 impl From<FromDiscord> for &'static str {
     fn from(_: FromDiscord) -> Self { "success" }
+}
+
+impl schemars::JsonSchema for FromDiscord {
+    fn schema_name() -> String {
+        "FromDiscord".to_string()
+    }
+
+    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+        gen.subschema_for::<&'static str>()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
