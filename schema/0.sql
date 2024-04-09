@@ -1,7 +1,3 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS citext;
-COMMENT ON EXTENSION citext IS 'data type for case-insensitive character strings';
-
 CREATE TABLE teams (
     id uuid PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
     name citext NOT NULL UNIQUE,

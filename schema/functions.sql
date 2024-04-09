@@ -1,8 +1,8 @@
-CREATE OR REPLACE FUNCTION get_solves_chall(challenge_id uuid) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION get_solves_chall(challenge_id uuid) RETURNS bigint AS $$
     SELECT COUNT(attempt_id) AS result FROM solve_successes WHERE challenge_id = $1;
 $$ LANGUAGE SQL STABLE;
 
-CREATE OR REPLACE FUNCTION get_score_team(team_id uuid) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION get_score_team(team_id uuid) RETURNS bigint AS $$
     SELECT COALESCE(SUM(challenges.points), 0) AS result
     FROM challenges
         INNER JOIN solve_successes
@@ -10,7 +10,7 @@ CREATE OR REPLACE FUNCTION get_score_team(team_id uuid) RETURNS integer AS $$
     WHERE solve_successes.team_id = $1;
 $$ LANGUAGE SQL STABLE;
 
-CREATE OR REPLACE FUNCTION get_score_user(user_id uuid) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION get_score_user(user_id uuid) RETURNS bigint AS $$
     SELECT COALESCE(SUM(challenges.points), 0) AS result
     FROM challenges
         INNER JOIN solve_successes
@@ -132,7 +132,7 @@ CREATE OR REPLACE FUNCTION get_top_n_teams(n integer) RETURNS SETOF uuid AS $$
     SELECT id FROM teams ORDER BY score DESC, last_solve ASC, inserted_at ASC LIMIT n;
 $$ LANGUAGE SQL STABLE;
 
-CREATE OR REPLACE FUNCTION get_team_score_at(team_id uuid, at_time timestamp(0) without time zone) RETURNS integer AS $$
+CREATE OR REPLACE FUNCTION get_team_score_at(team_id uuid, at_time timestamp(0) without time zone) RETURNS bigint AS $$
     SELECT COALESCE(SUM(chall.points), 0) AS result
     FROM solve_successes as solve
     INNER JOIN challenges as chall ON solve.challenge_id = chall.id
