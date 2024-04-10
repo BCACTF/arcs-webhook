@@ -1,4 +1,4 @@
-use sqlx::{ query_as, query, Connection };
+use sqlx::{ query_as, query };
 use uuid::Uuid;
 
 use super::Ctx;

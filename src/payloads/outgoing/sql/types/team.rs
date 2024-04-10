@@ -17,7 +17,7 @@ impl From<Team> for SerializableTeam {
         SerializableTeam {
             id, name, eligible, affiliation,
             score,
-            last_solve: last_solve.map(|dt| dt.timestamp() as u64),
+            last_solve: last_solve.map(|dt| dt.and_utc().timestamp() as u64),
         }
     }
 }
@@ -47,6 +47,6 @@ impl schemars::JsonSchema for Team {
 #[derive(Debug, Clone, Copy, Serialize, schemars::JsonSchema)]
 pub struct ScoreEntry {
     pub team_id: Uuid,
-    pub score: i32,
+    pub score: i64,
     pub time: chrono::NaiveDateTime,
 }

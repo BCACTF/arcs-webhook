@@ -19,31 +19,33 @@ mod env {
         use super::str_vars::{ frontend_token, webhook_token, deploy_token, oauth_token };
         use arcs_env_rs::*;
 
+        const TOKEN_LEN: usize = 64;
+
         lazy_static::lazy_static! {
-            pub static ref FRONTEND_AUTH: Result<[u8; 32], &'static str> = (&frontend_token().as_bytes().to_owned()[..])
+            pub static ref FRONTEND_AUTH: Result<[u8; TOKEN_LEN], &'static str> = (&frontend_token().as_bytes().to_owned()[..])
                 .try_into()
                 .map_err(|_| "FRONTEND_AUTH");
-            pub static ref WEBHOOK_AUTH:  Result<[u8; 32], &'static str> = (&webhook_token() .as_bytes().to_owned()[..])
+            pub static ref WEBHOOK_AUTH:  Result<[u8; TOKEN_LEN], &'static str> = (&webhook_token() .as_bytes().to_owned()[..])
                 .try_into()
                 .map_err(|_| "WEBHOOK_AUTH");
-            pub static ref DEPLOY_AUTH:   Result<[u8; 32], &'static str> = (&deploy_token()  .as_bytes().to_owned()[..])
+            pub static ref DEPLOY_AUTH:   Result<[u8; TOKEN_LEN], &'static str> = (&deploy_token()  .as_bytes().to_owned()[..])
                 .try_into()
                 .map_err(|_| "DEPLOY_AUTH");
-            pub static ref OAUTH_AUTH:    Result<[u8; 32], &'static str> = (&oauth_token()   .as_bytes().to_owned()[..])
+            pub static ref OAUTH_AUTH:    Result<[u8; TOKEN_LEN], &'static str> = (&oauth_token()   .as_bytes().to_owned()[..])
                 .try_into()
                 .map_err(|_| "OAUTH_AUTH");
         }
 
-        pub fn frontend_auth() -> [u8; 32] {
+        pub fn frontend_auth() -> [u8; TOKEN_LEN] {
             FRONTEND_AUTH.unwrap()
         }
-        pub fn webhook_auth() -> [u8; 32] {
+        pub fn webhook_auth() -> [u8; TOKEN_LEN] {
             WEBHOOK_AUTH.unwrap()
         }
-        pub fn deploy_auth() -> [u8; 32] {
+        pub fn deploy_auth() -> [u8; TOKEN_LEN] {
             DEPLOY_AUTH.unwrap()
         }
-        pub fn oauth_auth() -> [u8; 32] {
+        pub fn oauth_auth() -> [u8; TOKEN_LEN] {
             OAUTH_AUTH.unwrap()
         }
 
@@ -108,9 +110,9 @@ pub (crate) fn check_matches(list: &[Token], bytes: &[u8]) -> bool {
         use self::env::*;
 
         let bool_return = match token {
-            Token::Frontend => constant_time_eq::constant_time_eq_32(&buffer, &frontend_auth()),
-            Token::Deploy   => constant_time_eq::constant_time_eq_32(&buffer, &deploy_auth()),
-            Token::Oauth    => constant_time_eq::constant_time_eq_32(&buffer, &oauth_auth()),
+            Token::Frontend => constant_time_eq::constant_time_eq_n(&buffer, &frontend_auth()),
+            Token::Deploy   => constant_time_eq::constant_time_eq_n(&buffer, &deploy_auth()),
+            Token::Oauth    => constant_time_eq::constant_time_eq_n(&buffer, &oauth_auth()),
         };
         will_return_true = std::hint::black_box(black_box_or(
             std::hint::black_box(bool_return),

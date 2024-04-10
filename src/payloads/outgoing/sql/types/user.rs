@@ -26,7 +26,7 @@ impl From<User> for SerializableUser {
             id, email, name,
             team_id, score,
             eligible, admin,
-            last_solve: last_solve.map(|dt| dt.timestamp() as u64),
+            last_solve: last_solve.map(|dt| dt.and_utc().timestamp() as u64),
         }
     }
 }

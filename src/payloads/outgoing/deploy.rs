@@ -45,7 +45,7 @@ pub enum FromDeployErr {
     DbError,
     DeployServer {
         code: u16,
-        body: Vec<u8>,
+        body: String,
     },
 }
 
@@ -55,7 +55,7 @@ impl OutgoingErr for FromDeployErr {
             Self::BadSend => Ok(serde_json::json!("Failed to forward request to the deploy server")),
             Self::BadResponse => Ok(serde_json::json!("The deploy server responded with an invalid data shape.")),
             Self::DbError => Ok(serde_json::json!("There was a database issue that prevented the deploy message from being sent.")),
-            Self::DeployServer { body, .. } => Ok(serde_json::json!(String::from_utf8_lossy(&body)))
+            Self::DeployServer { body, .. } => Ok(serde_json::json!(String::from_utf8_lossy(body.as_bytes())))
         }
     }
     fn status_code(&self) -> u16 {

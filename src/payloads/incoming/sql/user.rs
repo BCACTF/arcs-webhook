@@ -33,6 +33,12 @@ pub enum UserQuery {
         admin: bool,
         auth: Auth,
     },
+    #[serde(rename = "promote")]
+    Promote {
+        admin_id: Uuid,
+        admin_auth: Auth,
+        user_to_promote: Uuid,
+    },
     #[serde(rename = "check_auth")]
     CheckUserAuth {
         id: Uuid,

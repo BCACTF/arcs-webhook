@@ -73,6 +73,30 @@ pub async fn handle(mut ctx: super::Ctx, query: UserQuery) -> Result<FromSql, Fr
                 }).await?
             )
         },
+        UserQuery::Promote { admin_id, admin_auth, user_to_promote } => {
+            debug!("SQL user req classified as 'Promote<{admin_id} promotes user {user_to_promote} to admin>' req");
+
+            if !check_user_auth(&mut ctx, admin_id, admin_auth).await? {
+                return Err(FromSqlErr::Auth);
+            }
+            let admin = get_user(&mut ctx, admin_id).await?.ok_or(sqlx::Error::RowNotFound)?;
+
+            if !admin.admin {
+                return Err(FromSqlErr::Auth);
+            }
+
+            FromSql::User(
+                update_user(
+                    &mut ctx,
+                    UserInput {
+                        id: user_to_promote,
+                        name: None,
+                        eligible: None,
+                        admin: Some(true),
+                    },
+                ).await?
+            )
+        }
         UserQuery::UpdateUserAuth { id, old_auth, new_auth } => {
             debug!("SQL user req classified as 'UpdateUserAuth<{id}>' req");
 

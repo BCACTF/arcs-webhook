@@ -29,7 +29,7 @@ pub struct Outgoing {
 impl Outgoing {
     fn get_code<T, Err: OutgoingErr>(opt_res: &Option<Result<T, Err>>) -> Option<u16> {
         match opt_res {
-            Some(Ok(res)) => {
+            Some(Ok(_)) => {
                 Some(200)
             },
             Some(Err(e)) => {

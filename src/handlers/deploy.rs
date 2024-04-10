@@ -120,7 +120,7 @@ impl Handle for ToDeploy {
                 let err = match response.bytes().await {
                     Ok(body) => FromDeployErr::DeployServer {
                         code,
-                        body: body.to_vec(),
+                        body: String::from_utf8_lossy(&body).into_owned(),
                     },
                     Err(_) => FromDeployErr::DeployServer {
                         code: 500,

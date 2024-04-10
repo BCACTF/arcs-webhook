@@ -17,7 +17,7 @@ impl From<Solve> for SerializableSolve {
     fn from(Solve { id, user_id, team_id, chall_id, correct, counted, time }: Solve) -> Self {
         Self {
             id, user_id, team_id, chall_id, correct, counted,
-            time: time.timestamp() as u64,
+            time: time.and_utc().timestamp() as u64,
         }
     }
 }

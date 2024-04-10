@@ -5,7 +5,7 @@ use crate::logging::*;
 
 use crate::http_client::DEFAULT;
 use crate::payloads::incoming::frontend::SyncType;
-use crate::payloads::incoming::{ToFrontend};
+use crate::payloads::incoming::ToFrontend;
 use crate::payloads::outgoing::frontend::{FromFrontend, FromFrontendErr};
 
 use super::{Handle, ResponseFrom};
@@ -54,6 +54,9 @@ impl Handle for ToFrontend {
                     Self::Sync(sync_type) => Ok(FromFrontend::Synced(sync_type)),
                 }
             } else {
+                if let Ok(bytes) = response.bytes().await {
+                    debug!("{}", String::from_utf8_lossy(&bytes));
+                }
                 warn!("Frontend req returned error");
                 
                 match self {

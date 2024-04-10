@@ -1,4 +1,4 @@
-use arcs_logging_rs::{DEFAULT_LOGGGING_TARGETS, set_up_logging};
+use arcs_logging_rs::{DEFAULT_LOGGING_TARGETS, set_up_logging};
 
 use webhook_rs::handlers::Handle as _;
 
@@ -34,7 +34,7 @@ macro_rules! verify_envs {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenvy::dotenv().unwrap();
-    set_up_logging(&DEFAULT_LOGGGING_TARGETS, "Webhook").unwrap();
+    let clean_up_logging = set_up_logging(&DEFAULT_LOGGING_TARGETS, "Webhook").unwrap();
 
     {
         use env::checks::*;
@@ -57,13 +57,22 @@ async fn main() -> std::io::Result<()> {
     let ip = "0.0.0.0";
     let port = env::port().parse().unwrap();
 
-    HttpServer::new(|| {
+    let res = HttpServer::new(|| {
         App::new()
             .service(main_route)
     })
         .bind((ip, port))?
         .run()
-        .await
+        .await;
+
+
+    if let Err(e) = &res {
+        error!("Failed to start server.");
+        error!("Error: {e}");
+    }
+    clean_up_logging();
+
+    res
 }
 
 
