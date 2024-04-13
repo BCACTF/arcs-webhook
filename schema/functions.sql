@@ -77,8 +77,12 @@ CREATE OR REPLACE FUNCTION update_all_chall_solves() RETURNS void AS $$
 $$ LANGUAGE SQL VOLATILE;
 
 CREATE OR REPLACE FUNCTION update_db_scores_solves() RETURNS void AS $$
-    SELECT update_all_user_scores(), update_all_team_scores(), update_all_chall_solves();
-$$ LANGUAGE SQL VOLATILE;
+BEGIN
+    PERFORM update_all_user_scores();
+    PERFORM update_all_team_scores();
+    PERFORM update_all_chall_solves();
+END;
+$$ LANGUAGE plpgsql VOLATILE;
 
 
 
