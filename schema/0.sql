@@ -1,11 +1,8 @@
-CREATE TABLE teams (
+CREATE TABLE IF NOT EXISTS teams (
     id uuid PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
     name citext NOT NULL UNIQUE,
 
     description text NOT NULL,
-
-    score integer DEFAULT 0 NOT NULL,
-    last_solve timestamp(0) without time zone,
 
     eligible boolean DEFAULT false NOT NULL,
     affiliation varchar(255),
@@ -14,9 +11,9 @@ CREATE TABLE teams (
     inserted_at timestamp(0) without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp(0) without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-CREATE UNIQUE INDEX teams_name_idx ON teams USING btree (name);
+CREATE UNIQUE INDEX IF NOT EXISTS teams_name_idx ON teams USING btree (name);
 
-CREATE TABLE challenges (
+CREATE TABLE IF NOT EXISTS challenges (
     id uuid PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
     name citext NOT NULL UNIQUE,
 
