@@ -7,27 +7,43 @@ default-run = "webhook-rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-web = { version = "4", features = ["rustls"] }
+# Env and logging
 arcs-env-rs = "0.2"
 arcs-logging-rs = "0.2"
-async-trait = "0.1"
-chrono = { version = "0.4", features = ["serde"] }
-constant_time_eq = "0.3"
 dotenvy = "0.15"
+
+# Async/await stuff
+async-trait = "0.1"
 futures = "0.3"
-lazy_static = "1.4"
+tokio = { version = "1", features = ["macros"] }
+
+# Password and secret comparison
+constant_time_eq = "0.3"
+rust-argon2 = "1"
+
+# JSON
+schemars = { version = "0.8", features = ["uuid", "uuid1", "chrono", "preserve_order"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Utils
+chrono = { version = "0.4", features = ["serde"] }
+lazy_static = "1"
 rand = "0.8"
+uuid = { version = "1", features = ["serde", "v4"] }
+
+# Web(hook) server
+actix-web = { version = "4", features = ["rustls"] }
+
+# HTTP requests to other microservices/endpoints
 reqwest = { version = "0.11", features = [
     "__rustls", "hyper-rustls", "json", "rustls", "rustls-pemfile", "rustls-tls", "rustls-tls-webpki-roots",
     "serde_json", "tokio-rustls", "webpki-roots"
 ], default-features = false }
-rust-argon2 = "1"
-schemars = { version = "0.8", features = ["uuid", "uuid1", "chrono", "preserve_order"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+
+# postgresql interface
 sqlx = { version = "0.6", features = ["postgres", "json", "uuid", "time", "chrono", "runtime-tokio-rustls"] }
-tokio = { version = "1", features = ["macros"] }
-uuid = { version = "1", features = ["serde", "v4"] }
 
 [dev-dependencies]
 actix-http = "3"
+assert_json = "0.1"
