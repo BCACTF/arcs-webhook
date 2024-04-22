@@ -28,3 +28,6 @@ serde_json = "1"
 sqlx = { version = "0.6", features = ["postgres", "json", "uuid", "time", "chrono", "runtime-tokio-rustls"] }
 tokio = { version = "1", features = ["macros"] }
 uuid = { version = "1", features = ["serde", "v4"] }
+
+[dev-dependencies]
+actix-http = "3"

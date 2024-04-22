@@ -63,6 +63,9 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+#[cfg(test)]
+mod tests;
+
 pub mod payloads;
 pub mod handlers;
 
@@ -256,5 +259,96 @@ mod passwords {
             .map_err(|_| ())?;
 
         Ok(salt)
+    }
+}
+
+pub mod setup {
+    use arcs_logging_rs::{ set_up_logging, DEFAULT_LOGGING_TARGETS };
+    use super::env;
+    use super::logging::*;
+    use super::start_db_connection;
+
+    macro_rules! verify_envs {
+        ($($fn:path: $name:literal),+ $(,)?) => {
+            {
+                let mut failed = false;
+                $(
+                    if let Err(e) = $fn() {
+                        error!("Failed to find {} env variables {e}", $name);
+                        failed |= true;
+                    }
+                )+
+    
+                if failed {
+                    error!("Aborting...");
+                    std::process::exit(1);
+                }
+            }
+        };
+    }
+
+    /// This is a setup function that should ONLY ever be called by `main` and
+    /// tests.
+    #[allow(clippy::unwrap_used)]
+    pub async fn setup(load_env: bool, logging: bool) -> Box<dyn FnOnce()> {
+        if load_env {
+            dotenvy::dotenv().unwrap();
+        }
+        
+        let clean_up_logging: Box<dyn FnOnce()> = if logging {
+            Box::new(
+                set_up_logging(&DEFAULT_LOGGING_TARGETS, "Webhook").unwrap()
+            )
+        } else {
+            Box::new(|| {})
+        };
+
+
+        {
+            use env::checks::*;
+            verify_envs!(
+                main: "main",
+                sql: "sql",
+                discord: "discord",
+                auth: "auth",
+            );
+        }
+        
+        if let Err(e) = start_db_connection().await {
+            error!("Failed to initialize database connection.");
+            error!("Error: {e}");
+            error!("Aborting...");
+            std::process::exit(1);
+        }
+
+        clean_up_logging
+    }
+
+    use actix_web::{
+        HttpResponse, Responder,
+        web::{ Json, Header },
+    };
+    use crate::{
+        payloads::incoming::Incoming,
+        AuthHeader,
+        Token,
+        handlers::Handle,
+    };
+    use serde_json::json;
+
+    #[actix_web::post("/")]
+    async fn main_route(json: Json<Incoming>, authorization: Header<AuthHeader>) -> impl Responder {
+        if authorization.0.check_matches(&[ Token::Frontend, Token::Deploy ]) {
+            json
+                .into_inner()
+                .handle()
+                .await
+                .unwrap()
+                .response()
+        } else {
+            // TODO: More accurate error messages
+            HttpResponse::Unauthorized()
+                .json(json!({ "error": "Improper bearer authentication" }))
+        }
     }
 }
