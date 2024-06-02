@@ -3,11 +3,11 @@ mod types;
 use std::borrow::Cow;
 
 use serde::Serialize;
+
 use uuid::Uuid;
 
 use crate::handlers::OutgoingErr;
 
-// TODO: Fix this
 #[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
 #[serde(tag = "__type", rename_all = "snake_case", content = "data")]
 pub enum FromSql {
@@ -26,6 +26,8 @@ pub enum FromSql {
 
     Availability(bool),
     AuthStatus(bool),
+
+    Attempts(Attempts),
 }
 
 #[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
@@ -89,6 +91,6 @@ impl OutgoingErr for FromSqlErr {
     }
 }
 
-pub use types::{ Chall, Solve, Team, ScoreEntry, User };
+pub use types::{ Chall, Solve, Team, ScoreEntry, User, Attempts };
 
 

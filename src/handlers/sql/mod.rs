@@ -4,7 +4,7 @@ mod challs;
 mod solves;
 mod teams;
 mod users;
-
+mod attempts;
 use async_trait::async_trait;
 
 use crate::payloads::incoming::ToSql;
@@ -69,6 +69,16 @@ impl Handle for ToSql {
                     }
                 }
             },
+            ToSql::Attempt(attempt_query ) => {
+                debug!("SQL req classified as attempt req");
+                match attempts::handle(sql_connection, attempt_query).await {
+                    Ok(return_payload) => return_payload,
+                    Err(e) => {
+                        debug!("Attempts SQL error: {e:?}");
+                        return Err(e);
+                    }
+                }
+            }
         };
         Ok(return_payload)
     }

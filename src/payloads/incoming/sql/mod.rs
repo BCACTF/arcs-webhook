@@ -2,6 +2,7 @@ mod chall;
 mod solve;
 mod team;
 mod user;
+mod attempts;
 
 use {
     serde::{Deserialize, Serialize},
@@ -12,6 +13,7 @@ pub use chall::{ ChallQuery, Link, LinkType };
 pub use solve::SolveQuery;
 pub use team::TeamQuery;
 pub use user::{ UserQuery, Auth };
+pub use attempts::AttemptQuery;
 
 
 
@@ -23,4 +25,5 @@ pub enum ToSql {
     Team(TeamQuery),
     Chall(ChallQuery),
     Solve(SolveQuery),
+    Attempt(AttemptQuery),
 }
