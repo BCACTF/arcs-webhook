@@ -28,6 +28,7 @@ pub enum FromSql {
     AuthStatus(bool),
 
     Attempts(Attempts),
+    AttemptsArr(Vec<Attempts>),
 }
 
 #[derive(Debug, Clone, Serialize, schemars::JsonSchema)]

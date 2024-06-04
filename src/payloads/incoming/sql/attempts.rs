@@ -11,4 +11,6 @@ pub enum AttemptQuery {
     GetAllAttemptsByChall { chall_id: Uuid },
     #[serde(rename = "get_all_attempts_by_team")]
     GetAllAttemptsByTeam { team_id: Uuid },
+    #[serde(rename = "get_all_attempts")]
+    GetAllAttempts,
 }

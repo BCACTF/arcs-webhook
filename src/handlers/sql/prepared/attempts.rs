@@ -87,3 +87,94 @@ pub async fn get_all_attempts_by_team(ctx: &mut Ctx, team_id: Uuid) -> Result<At
         }
     }
 }
+
+pub async fn get_all_attempts(ctx: &mut Ctx) -> Result<Vec<Attempts>, sqlx::Error> {
+    struct TeamAttempts {
+        team_id: Uuid,
+        correct: Option<i64>,
+        incorrect: Option<i64>,
+    }
+
+    struct ChallAttempts {
+        chall_id: Uuid,
+        correct: Option<i64>,
+        incorrect: Option<i64>,
+    }
+
+    let team_query = query_as!(
+        TeamAttempts,
+        r#"
+            SELECT
+                t.id as team_id,
+                (SELECT COUNT(*) FROM solve_attempts AS att WHERE att.team_id = t.id AND att.correct) AS correct,
+                (SELECT COUNT(*) FROM solve_attempts AS att WHERE att.team_id = t.id AND NOT att.correct) AS incorrect
+            FROM teams as t;
+        "#,
+    );
+
+    let chall_query = query_as!(
+        ChallAttempts,
+        r#"
+            SELECT
+                c.id as chall_id,
+                (SELECT COUNT(*) FROM solve_attempts AS att WHERE att.challenge_id = c.id AND att.correct) AS correct,
+                (SELECT COUNT(*) FROM solve_attempts AS att WHERE att.challenge_id = c.id AND NOT att.correct) AS incorrect
+            FROM challenges as c;
+        "#,
+    );
+
+    let team_attempts = team_query.fetch_all(&mut *ctx).await?;
+    let chall_attempts = chall_query.fetch_all(&mut *ctx).await?;
+
+    // Optimization!
+    let expected_len = team_attempts.len() + chall_attempts.len();
+
+    let team_attempts = team_attempts.into_iter().map(|team| {
+        match (team.correct, team.incorrect) {
+            (Some(correct), Some(incorrect)) => {
+                Ok(Attempts {
+                    team_id: Some(team.team_id),
+                    chall_id: None,
+                    correct: correct as u64,
+                    incorrect: incorrect as u64,
+                })
+            },
+            _ => {
+                Err(sqlx::Error::RowNotFound)
+            }
+        }
+    });
+
+    let chall_attempts = chall_attempts.into_iter().map(|chall| {
+        match (chall.correct, chall.incorrect) {
+            (Some(correct), Some(incorrect)) => {
+                Ok(Attempts {
+                    team_id: None,
+                    chall_id: Some(chall.chall_id),
+                    correct: correct as u64,
+                    incorrect: incorrect as u64,
+                })
+            },
+            _ => {
+                Err(sqlx::Error::RowNotFound)
+            }
+        }
+    });
+
+    team_attempts
+        .chain(chall_attempts)
+        .try_fold(
+            Vec::with_capacity(expected_len),
+            |mut output, attempts_obj| {
+                match attempts_obj {
+                    Ok(attempts) => {
+                        output.push(attempts);
+                        Ok(output)
+                    },
+                    Err(e) => {
+                        Err(e)
+                    }
+                }
+            },
+        )
+}
