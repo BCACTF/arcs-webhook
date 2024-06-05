@@ -42,21 +42,6 @@ pub async fn handle(mut ctx: super::Ctx, query: TeamQuery) -> Result<FromSql, Fr
 
             FromSql::TeamArr(queries::get_team_batch(&mut ctx, &top_team_ids).await?)
         },
-        TeamQuery::GetTopTeamsScoreHistory { limit, start_time } => {
-            debug!("SQL team req classified as 'GetTopTeamsScoreHistory<{limit}>' req");
-
-            // Cap here to prevent server from being overloaded by a
-            // badly-written client
-            if limit > 100 {
-                return Err(FromSqlErr::RequestTooBig(limit as u64, 100))
-            }
-            
-            let top_team_ids = queries::get_top_teams(&mut ctx, limit).await?;
-
-            let team_score_history = queries::get_team_score_history_batch(&mut ctx, &top_team_ids, start_time).await?;
-            FromSql::TeamScoreHistoryArray(team_score_history)
-        },
-
 
         TeamQuery::CheckTeamnameAvailability { name } => {
             let display_name = shortened(&name, 13);

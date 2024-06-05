@@ -16,7 +16,6 @@ pub enum FromSql {
     
     Team(Team),
     TeamArr(Vec<Team>),
-    TeamScoreHistoryArray(Vec<ScoreEntry>),
     
     User(User),
     UserArr(Vec<User>),
@@ -29,6 +28,9 @@ pub enum FromSql {
 
     Attempts(Attempts),
     AttemptsArr(Vec<Attempts>),
+
+    History(History),
+    HistoryArr(Vec<History>),
 }
 
 #[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
@@ -92,6 +94,4 @@ impl OutgoingErr for FromSqlErr {
     }
 }
 
-pub use types::{ Chall, Solve, Team, ScoreEntry, User, Attempts };
-
-
+pub use types::{ Chall, Solve, Team, History, SimpleHistoryEntry, User, Attempts };

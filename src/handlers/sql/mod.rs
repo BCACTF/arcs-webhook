@@ -5,6 +5,7 @@ mod solves;
 mod teams;
 mod users;
 mod attempts;
+mod history;
 use async_trait::async_trait;
 
 use crate::payloads::incoming::ToSql;
@@ -78,7 +79,17 @@ impl Handle for ToSql {
                         return Err(e);
                     }
                 }
-            }
+            },
+            ToSql::History(history_query ) => {
+                debug!("SQL req classified as history req");
+                match history::handle(sql_connection, history_query).await {
+                    Ok(return_payload) => return_payload,
+                    Err(e) => {
+                        debug!("History SQL error: {e:?}");
+                        return Err(e);
+                    }
+                }
+            },
         };
         Ok(return_payload)
     }

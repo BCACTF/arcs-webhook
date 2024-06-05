@@ -42,11 +42,3 @@ impl schemars::JsonSchema for Team {
         "Team".to_string()
     }
 }
-
-
-#[derive(Debug, Clone, Copy, Serialize, schemars::JsonSchema)]
-pub struct ScoreEntry {
-    pub team_id: Uuid,
-    pub score: i64,
-    pub time: chrono::NaiveDateTime,
-}

@@ -3,6 +3,7 @@ mod solve;
 mod team;
 mod user;
 mod attempts;
+mod history;
 
 use {
     serde::{Deserialize, Serialize},
@@ -14,6 +15,7 @@ pub use solve::SolveQuery;
 pub use team::TeamQuery;
 pub use user::{ UserQuery, Auth };
 pub use attempts::AttemptQuery;
+pub use history::HistoryQuery;
 
 
 
@@ -26,4 +28,5 @@ pub enum ToSql {
     Chall(ChallQuery),
     Solve(SolveQuery),
     Attempt(AttemptQuery),
+    History(HistoryQuery)
 }

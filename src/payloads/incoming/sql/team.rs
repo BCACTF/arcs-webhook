@@ -45,9 +45,4 @@ pub enum TeamQuery {
     GetTopTeams {
         limit: u32,
     },
-    #[serde(rename = "get_top_history")]
-    GetTopTeamsScoreHistory {
-        limit: u32,
-        start_time: NaiveDateTime,
-    },
 }

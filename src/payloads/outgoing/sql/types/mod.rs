@@ -3,11 +3,13 @@ mod team;
 mod user;
 mod solve;
 mod attempts;
+mod history;
 
 pub use {
     chall::Chall,
     attempts::Attempts,
     solve::Solve,
-    team::{ Team, ScoreEntry },
+    team::Team,
     user::User,
+    history::{ History, SimpleHistoryEntry },
 };
