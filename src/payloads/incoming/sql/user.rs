@@ -57,6 +57,8 @@ pub enum UserQuery {
 
         team_name: String,
         team_pass: String,
+
+        bypass_limit: Option<bool>,
     },
     #[serde(rename = "get")]
     GetUser {

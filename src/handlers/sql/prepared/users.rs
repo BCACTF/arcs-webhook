@@ -188,7 +188,24 @@ pub async fn update_user(ctx: &mut Ctx, input: UserInput) -> Result<User, sqlx::
         Err(sqlx::Error::RowNotFound)
     }
 }
-pub async fn set_user_team(ctx: &mut Ctx, id: Uuid, team_id: Uuid) -> Result<User, sqlx::Error> {
+pub async fn set_user_team(ctx: &mut Ctx, id: Uuid, team_id: Uuid, limit: Option<i64>) -> Result<User, sqlx::Error> {
+    if let Some(limit) = limit {
+        let team_can_take_more_users = query_as!(
+            PredRow,
+            r#"
+                SELECT (COUNT(*) < $2) as "value!" FROM users WHERE team_id = $1;
+            "#,
+            team_id,
+            limit,
+        );
+    
+        let team_can_take_more_users = team_can_take_more_users.fetch_optional(&mut *ctx).await?;
+        match team_can_take_more_users {
+            Some(PredRow { value: false }) => return Err(sqlx::Error::Io(std::io::Error::new(std::io::ErrorKind::Other, "Team is full."))),
+            None => return Err(sqlx::Error::RowNotFound),
+            Some(PredRow { value: true }) => {}
+        }
+    }
 
     let query = query!(
         r#"

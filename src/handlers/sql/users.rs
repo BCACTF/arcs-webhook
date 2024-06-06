@@ -13,6 +13,8 @@ use queries::{
 };
 use queries::{ UserInput, NewUserInput, Auth as SqlAuth };
 
+const TEAM_SIZE_LIMIT: i64 = 5;
+
 fn get_create_auth(auth: IncomingAuth) -> Result<SqlAuth, FromSqlErr> {
     use crate::passwords::*;
 
@@ -110,7 +112,7 @@ pub async fn handle(mut ctx: super::Ctx, query: UserQuery) -> Result<FromSql, Fr
             debug!("SQL user req classified as 'CheckUserAuth<{id}>' req");
             FromSql::AuthStatus(check_user_auth(&mut ctx, id, auth).await?)
         },
-        UserQuery::JoinTeam { id, auth, team_name, team_pass } => {
+        UserQuery::JoinTeam { id, auth, team_name, team_pass, bypass_limit } => {
             use super::prepared::teams::{ get_team_by_name, check_team_auth };
 
             let display_name = shortened(&team_name, 13);
@@ -124,7 +126,8 @@ pub async fn handle(mut ctx: super::Ctx, query: UserQuery) -> Result<FromSql, Fr
             let team_auth = check_team_auth(&mut ctx, team.id, team_pass).map_err(FromSqlErr::from).await?;
             
             if user_auth && team_auth {
-                FromSql::User(set_user_team(&mut ctx, id, team.id).await?)
+                let limit = if bypass_limit == Some(true) { None } else { Some(TEAM_SIZE_LIMIT) };
+                FromSql::User(set_user_team(&mut ctx, id, team.id, limit).await?)
             } else {
                 return Err(FromSqlErr::Auth)
             }

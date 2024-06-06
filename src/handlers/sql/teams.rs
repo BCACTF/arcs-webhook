@@ -96,7 +96,7 @@ pub async fn handle(mut ctx: super::Ctx, query: TeamQuery) -> Result<FromSql, Fr
             }).await?;
 
 
-            super::prepared::users::set_user_team(&mut ctx, initial_user, team.id).await?;
+            super::prepared::users::set_user_team(&mut ctx, initial_user, team.id, None).await?;
 
 
             let Some(team) = get_team(&mut ctx, team.id).await? else {
