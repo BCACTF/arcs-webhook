@@ -224,7 +224,7 @@ mod sql {
     }
 }
 
-mod passwords {
+pub mod passwords {
     use argon2::{ Config, ThreadMode, Variant, Version };
     
     pub const ARGON2_CONFIG: Config = Config {
