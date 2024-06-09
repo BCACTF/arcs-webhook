@@ -143,6 +143,7 @@ pub async fn first_blood_details(ctx: &mut Ctx, solve_id: Uuid) -> Result<Option
             WHERE
                 attempt.id = $1 AND
                 attempt.correct AND
+                chall.visible AND
                 (
                     SELECT
                         att.id AS att_id
