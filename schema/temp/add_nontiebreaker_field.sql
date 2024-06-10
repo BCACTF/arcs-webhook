@@ -6,26 +6,32 @@ CREATE OR REPLACE FUNCTION update_scores_with_last_solve(success_id uuid) RETURN
     DECLARE
         was_tie_breaker boolean := (SELECT (c.non_tie_breaker = false) AS was_tie_breaker FROM solve_successes as s JOIN challenges as c ON s.challenge_id = c.id WHERE s.id = $1);
     BEGIN
+        UPDATE users
+        SET
+            score = get_score_user(users.id),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE users.id = (SELECT user_id FROM solve_successes WHERE id = $1);
+
+        UPDATE teams
+        SET
+            score = get_score_team(teams.id),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE teams.id = (SELECT team_id FROM solve_successes WHERE id = $1);
+
+        UPDATE challenges
+        SET
+            solve_count = get_solves_chall(challenges.id),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE challenges.id = (SELECT challenge_id FROM solve_successes WHERE id = $1);
+
         IF was_tie_breaker THEN 
             UPDATE users
-            SET
-                score = get_score_user(users.id),
-                last_solve = CURRENT_TIMESTAMP,
-                updated_at = CURRENT_TIMESTAMP
+            SET last_solve = CURRENT_TIMESTAMP
             WHERE users.id = (SELECT user_id FROM solve_successes WHERE id = $1);
 
             UPDATE teams
-            SET
-                score = get_score_team(teams.id),
-                last_solve = CURRENT_TIMESTAMP,
-                updated_at = CURRENT_TIMESTAMP
+            SET last_solve = CURRENT_TIMESTAMP
             WHERE teams.id = (SELECT team_id FROM solve_successes WHERE id = $1);
-
-            UPDATE challenges
-            SET
-                solve_count = get_solves_chall(challenges.id),
-                updated_at = CURRENT_TIMESTAMP
-            WHERE challenges.id = (SELECT challenge_id FROM solve_successes WHERE id = $1);
         END IF;
     END;
 $$ LANGUAGE plpgsql VOLATILE;
